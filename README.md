@@ -2,6 +2,8 @@
 
 Disciplina oferecida pelo Programa de Pós-Graduação em Biometria ministrada pela Profª Drª Miriam Harumi Tsunemi
 
+Acesse as páginas com as análises estatísticas nos links a seguir:
+
 - [Prática 1](https://g-rodrigues2.github.io/Pratica_de_Analise_de_Dados_em_R/Pratica_1/Analise_1.html): Levantamento de pacientes internados em um hospital
 - [Prática 2](https://g-rodrigues2.github.io/Pratica_de_Analise_de_Dados_em_R/Pratica_2/Analise_2.html): Avaliação da qualidade da água de rios e lagoas urbanizados
 - [Prática 3](https://g-rodrigues2.github.io/Pratica_de_Analise_de_Dados_em_R/Pratica_3/Analise_3.html): Distribuições de Probabilidade
