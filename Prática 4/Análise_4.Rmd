@@ -1,0 +1,152 @@
+---
+title: 'Prática 4: Intervalos de Confiança'
+author: "Guilherme Rodrigues"
+date: "`r format(Sys.Date(), '%d de %B de %Y')`"
+output:
+  html_document:
+    df_print: paged
+lang: "pt-BR"
+---
+
+<!-- ```{r setup, include=FALSE} -->
+<!-- knitr::opts_chunk$set(echo = TRUE) -->
+<!-- ``` -->
+```{r}
+options(encoding = "UTF-8")
+#limpar a memória
+rm(list = ls())
+```
+
+## Importando os dados
+```{r}
+library(readxl)
+data_ex1 <- read_excel("dados.xlsx", sheet = "Ex1")
+head(data_ex1)
+Idade = data_ex1$Idade
+qtd_pacientes = length(Idade)
+summary(Idade)
+
+hist(Idade, main = "Histograma da Idade dos Pacientes", 
+     ylab = "Frequência", xlab = "Idade (anos)", 
+     col = "lightblue", border = "black")
+```
+
+
+**1)** Um experimento avaliou o desempenho de uma pomada medicinal natural para o tratamento de feridas dermatológicas. 
+
+**a)** Calcule o intervalo de confiança de 95% para a idade média dos pacientes deste estudo.
+
+**Resposta:** Como temos uma população de 320 pacientes, podemos utilizar a distribuição normal para calcular o intervalo de confiança de 95% para a idade média dos pacientes.
+
+```{r}
+
+mu <- round(mean(Idade), 3)
+sigma <- round(sd(Idade), 3)
+print(paste("Média: ", mu))
+print(paste("Desvio Padrão: ", sigma))
+
+erro <- qnorm(0.975) * (sigma / sqrt(qtd_pacientes))
+lower_bound <- mu - erro
+upper_bound <- mu + erro
+cat("Intervalo de Confiança de 95% para a idade média dos pacientes: [", 
+    round(lower_bound, 2), ", ", round(upper_bound, 2), "]\n")
+```
+Portanto, o intervalo de confiança de 95% para a idade média dos pacientes é aproximadamente [49.19, 50.32] anos. 
+
+De outro modo, podemos utilizar a distribuiução t-student, a qual se mostra mais conservadora e se aproxima da normal conforme o tamanho da amostra aumenta, em nosso caso, uma amostra de 320 pacientes é mais do que suficiente. Podemos utilizar o fato de que os 320 pacientes são uma amostra de uma população maior, e assim utilizar a t-student para calcular o intervalo de confiança. Segue que:
+```{r}
+t <- qt(0.975, df = qtd_pacientes - 1)
+c(lower = mu - t*(sigma / sqrt(qtd_pacientes)), 
+  upper = mu + t*(sigma / sqrt(qtd_pacientes)))
+```
+
+Podemos notar neste caso que o intervalo de confiança de 95% para a idade média dos pacientes é aproximadamente [49.18, 50.32] anos, o que é muito próximo (quase idêntico) do valor obtido utilizando a distribuição normal.
+
+**b)** Apresente um intervalo de confiança de 95% para a proporção de resultado positivo deste tratamento e verifique se a eficácia é superior a 80%.
+
+**Resposta:** Para calcular o intervalo de confiança de 95% para a proporção de resultado positivo do tratamento, podemos utilizar a fórmula do intervalo de confiança para proporções.
+```{r}
+resultado_positivo <- sum(data_ex1$Resultado == "Positivo")
+p_hat <- resultado_positivo / qtd_pacientes
+erro_proporcao <- qnorm(0.975) * sqrt((p_hat * (1 - p_hat)) / qtd_pacientes)
+lower_bound_prop <- p_hat - erro_proporcao
+upper_bound_prop <- p_hat + erro_proporcao
+cat("Intervalo de Confiança de 95% para a proporção de resultado positivo: [",
+    round(lower_bound_prop, 4), ", ", 
+    round(upper_bound_prop, 4), "]\n")
+```
+Portanto, o intervalo de confiança de 95% para a proporção de resultado positivo do tratamento é aproximadamente [0.8493 ,  0.9194]. Como o limite inferior do intervalo de confiança (0.8493) é maior que 0.80, podemos concluir que a eficácia do tratamento é superior a 80%.
+
+
+**2)** Um levantamento deseja estudar as características de morcegos de uma região com o objetivo de verificar se o peso médio é superior a 100 gramas.  A partir da amostra dos morcegos, calcule o intervalo de confiança de 95% para o peso médio dos morcegos e verifique o objetivo do estudo.
+
+**Resposta:** Como temos uma quantidade inferior a 30 morcegos, devemos utilizar a distribuição t-student para calcular o intervalo de confiança de 95% para o peso médio dos morcegos. Segue que:
+```{r}
+data_ex2 <- read_excel("dados.xlsx", sheet = "Ex2e3")
+head(data_ex2)
+
+pesos <- c(data_ex2$Insetivoro, data_ex2$Hematofago)
+hist(pesos, main = "Histograma do Peso dos Morcegos", 
+     ylab = "Frequência", xlab = "Peso (gramas)", 
+     col = "lightblue", border = "black")
+summary(pesos)
+n_pesos <- length(pesos)
+
+mu_pesos <- mean(pesos)
+sigma_pesos <- sd(pesos)
+
+erro_pesos <- qt(0.975, df = n_pesos - 1) * (sigma_pesos / sqrt(n_pesos))
+lower_bound_pesos <- mu_pesos - erro_pesos
+upper_bound_pesos <- mu_pesos + erro_pesos
+
+cat("Intervalo de Confiança de 95% para o peso médio dos morcegos: [", 
+    round(lower_bound_pesos, 2), ", ", 
+    round(upper_bound_pesos, 2), "]\n")
+
+
+```
+De fato, o intervalo de confiança de 95% para o peso médio dos morcegos é aproximadamente [110.46, 114.79] gramas. Como o limite inferior do intervalo de confiança é maior que 100 gramas, podemos concluir que o peso médio dos morcegos é superior a 100 gramas, atendendo ao objetivo do estudo.
+
+
+**3)** Utilizando os dados do exercício anterior, compare a variância do peso dos morcegos insetívoros e hematófagos por meio de intervalo de confiança. Com este resultado, calcule o intervalo de confiança de 95% da diferença dos pesos médios entre os insetívoros e hematófagos.
+
+**Resposta:** Para comparar a variância do peso dos morcegos insetívoros e hematófagos, podemos utilizar o intervalo de confiança para a razão das variâncias. Segue que:
+
+```{r}
+insetivoro <- data_ex2$Insetivoro
+hematofago <- data_ex2$Hematofago
+s1 <- sd(insetivoro)
+s2 <- sd(hematofago)
+n1 <- length(insetivoro)
+n2 <- length(hematofago)
+
+R <- s1^2/s2^2
+
+lower_var <- R / qf(0.975, df1 = n1-1, df2 = n2-1)
+upper_var <- R / qf(0.025, df1 = n1-1, df2 = n2-1)
+
+
+cat("Intervalo de Confiança de 95% para a razão das variâncias: [", 
+    round(lower_var, 4), ", ", 
+    round(upper_var, 4), "]\n")
+```
+Como o intervalo de confiança para a razão das variâncias é aproximadamente [0.4452 ,  5.3717], e este intervalo inclui o valor 1, não podemos concluir que há uma diferença significativa entre as variâncias dos pesos dos morcegos insetívoros e hematófagos. Com este resultado, podemos assumir que as variâncias são iguais e calcular o intervalo de confiança de 95% para a diferença dos pesos médios entre os insetívoros e hematófagos utilizando a fórmula do intervalo de confiança para a diferença de médias com variâncias iguais. Segue que:
+
+```{r}
+mu_insetivoro <- mean(insetivoro)
+mu_hematofago <- mean(hematofago)
+print(paste("Média Insetívoros: ", round(mu_insetivoro, 3)))
+print(paste("Média Hematófagos: ", round(mu_hematofago, 3)))
+var_conjunta <- (((n1 - 1) * s1^2) + ((n2 - 1) * s2^2)) / (n1 + n2 - 2)
+se <- sqrt(var_conjunta * (1/n1 + 1/n2))
+t_value <- qt(0.975, df = n1 + n2 - 2)
+lower_dif <- (mu_insetivoro - mu_hematofago) - t_value * se
+upper_dif <- (mu_insetivoro - mu_hematofago) + t_value * se
+
+cat("Intervalo de Confiança de 95% para a diferença dos pesos médios entre 
+    insetívoros e hematófagos: [", 
+    round(lower_dif, 3), ", ", 
+    round(upper_dif, 3), "]\n")
+
+```
+Portanto, o intervalo de confiança de 95% para a diferença dos pesos médios entre os morcegos insetívoros e hematófagos é aproximadamente [-10.68 , -5.35] gramas. Como o intervalo de confiança não inclui o valor 0, podemos concluir que há uma diferença significativa entre os pesos médios dos morcegos insetívoros e hematófagos, com os hematófagos sendo mais pesados em média.

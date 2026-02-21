@@ -1,0 +1,320 @@
+---
+title: 'Prática 9: Correlação e Regressão'
+author: "Guilherme Rodrigues"
+date: "`r format(Sys.Date(), '%d de %B de %Y')`"
+output:
+  html_document:
+    df_print: paged
+lang: "pt-BR"
+---
+
+<!-- ```{r setup, include=FALSE} -->
+<!-- knitr::opts_chunk$set(echo = TRUE) -->
+<!-- ``` -->
+```{r}
+options(encoding = "UTF-8")
+#limpar a memória
+rm(list = ls())
+```
+
+**1) Um levantamento avaliou o impacto da poluição por manuseio de material químico na saúde de trabalhadores. No exame de sangue avaliou a quantidade de dióxido de carbono mensurado no sangue e o objetivo é verificar se esta quantidade está relacionada com o tempo de serviço do trabalhador.**
+
+```{r}
+library(readxl)
+library(ggplot2)
+dados <- read_excel("dados.xlsx", sheet = "AtividadeEx1")
+head(dados)
+attach(dados)
+
+summary(dados)
+```
+**a) Construa o gráfico de dispersão do tempo de serviço e a quantidade de dióxido de carbono no sangue.** 
+
+**Resposta:** O gráfico é dado por
+
+```{r}
+ggplot(dados, aes(x = Tempo, y = Sangue)) +
+  geom_point(color = "darkred") +
+  labs(title = "Tempo de Serviço vs. Dióxido de Carbono no Sangue",
+       x = "Tempo de Serviço",
+       y = "Nível de CO2 no Sangue") +
+  theme_minimal()
+```
+O gráfico indica uma relação linear positiva, isto é, a medida que o tempo de serviço aumenta, a quantidade de dióxido de carbono também cresce.
+
+**b) A partir das informações amostrais e com nível de significância de 0,05, há uma relação linear entre a quantidade de dióxido de carbono e o tempo de serviço? **
+
+**Resposta:** Para verificar se existe uma relação linear entre as variáveis, vamos calcular o teste de hipóteses para a correlação de Pearson. Segue que:
+
+- **Hipóteses:**
+$$
+\left\{\begin{array}{ll}
+  H_0: \rho = 0 \text{ Não há correlação linear entre as variáveis },\\
+  H_1: \rho \neq 0 \text{ Há correlação linear entre as variáveis}.\\
+\end{array}\right.
+$$
+
+```{r}
+cor.test(Tempo, Sangue)
+
+qt(0.975, 68)
+
+```
+- **Correlação**: $r \approx 0.95$.
+
+- **Nível de Significância:** $\alpha=0.05$ e p-valor < 0.001.
+
+- **Estatística do teste:** t-student com n-2 graus de liberdade = 24.491 com gl = 68.
+
+- Intervalo de Confiança de 95% para $\rho$ : [0.9211031; 0.9701057]
+
+- Conclusão: com nível de significancia de 0.05 rejeita-se $H_0$ e, portanto, há uma forte correlação linear positiva entre o tempo de serviço e o nível de dióxido de carbono no sangue. Ou seja, trabalhadores com maior tempo de serviço tendem a apresentar maior concentração de CO2 no sangue.
+
+**c) Ajuste uma regressão linear simples para a relação entre as duas variáveis do estudo.**
+
+**Resposta:** 
+
+```{r}
+# Regressão Linear Simples
+# variável dependente: dióxido de carbono no sangue
+# variavel independete: tempo
+# lm: linear model
+
+modelo <- lm(Sangue ~ Tempo) # ajuste da reta de regressão de teste de hipóteses
+summary(modelo)
+
+# Calculo do IC
+confint(modelo)
+
+# Gráfico da Regressão
+ggplot(dados, aes(x = Tempo, y = Sangue)) +
+  geom_point() +
+  geom_smooth(method = "lm", col = "blue") +
+  labs(title = "Regressão Linear Simples entre Nível de Colesterol no Sangue  \n e Tempo de Serviço",
+       x = "Nível de Colesterol",
+       y = "Tempo de Serviço") +
+      annotate("text", x=50, y=28, label = "y=22.99+0.04x,
+              F=599.8, p-value<0.001,
+               R² = 90.49%")+
+  theme_minimal()
+```
+
+Para cada unidade adicional de tempo de serviço, o nível médio de dióxido de carbono no sangue aumenta, em média, 0.04 unidades. Além disso, o modelo explica cerca de 90.5% da variação dos níveis de CO2 observados.
+
+**d)  Verifique se os coeficientes são diferentes de zero, com nível de significância de 0,05. Determine o intervalo de confiança de 95% para os coeficientes. Interprete os resultados. **
+
+**Resposta:**
+
+Testando as hipóteses para $\beta_0$ (parâmetro de inclinação) e $\alpha$ (intercepto):
+
+- **Hipóteses para $\beta$:**
+$$
+\left\{\begin{array}{ll}
+  H_0:\beta=\beta_0 \text{ Nível de dióxido de carbono independe do tempo de serviço },\\
+  H_1: \beta\neq \beta_0 \text{ Nível de dióxido de carbono depende do tempo de serviço}.\\
+\end{array}\right.
+$$
+- **Hipóteses para $\alpha$:**
+$$
+\left\{\begin{array}{ll}
+  H_0:\alpha=0,\\
+  H_1: \alpha\neq0.\\
+\end{array}\right.
+$$
+
+- **Nível de Significância de 0.05:** p-value <0.001 para os dois coeficientes.
+
+- **Estatística do teste:** 
+t-value do Tempo de Serviço = 24.49
+t-value do Nível de Dióxido de Carbono no Sangue = 179.04
+
+- **Intervalos de Confiança de 95%:**
+Inclinaçãpo ($\beta$):  0.039 [0.03650706; 0.04299389] 
+Intercepto ($\alpha$):  22.98  [22.73335329; 23.24655846] 
+Em ambos os casos o zero não pertence, e portanto, confirma o teste de hipóteses com nível de significancia de 0.05. 
+
+- **Conclusões:**
+Para $\beta$: Com nível de significancia de 0.05 rejeita-se $H_0$. Isso indica que o tempo de serviço é um preditor significativo da quantidade de dióxido de carbono no sangue. Além disso, o valor positivo de $\beta$ confirma que há um aumento médio de 0.039 unidades no CO2 a cada unidade de tempo de serviço.
+
+Para $\alpha$:  Com nível de significancia de 0.05 rejeita-se $H_0$, ou seja, o intercepto é diferente de zero ($\alpha\neq 0$). Para um trabalhador que tempo de serviço igual a zero, o nível de dióxido de carbono esperado no sangue é diferente de zero.
+
+
+**Quadro ANOVA para análise de variância aplicado a regressão linear simples**
+
+```{r}
+summary(aov(modelo))
+```
+
+| Causas de variação | g.l. | Soma de Quadrados | Quadrado Médio | Estat. F (Qmtrat/Qmres) | p-valor  |
+| ------------------ | ---- | ----------------- | -------------- | ----------------------- | -------- |
+| Regressão          | 1    | 58,74             | 58.74          | 599.8                   | < 0.0001 |
+| Resíduos           | 63   | 6.17              | 0.10           |                         |          |
+| **Total**          | 64   | 64.91             |                |                         |          |
+
+**Coeficiente de Determinação R2:** Indica a porcentagem da variabilidade do nível de colesterol explicada pela porcentagem de consumo de proteína.
+
+```{r}
+(R2 <- (58.74/64.91 )*100)
+```
+Acima de 80% é um valor ideal, portanto, como temos 90.5% aproximadamente, o ajuste é considerado ideal.
+
+**e) Realize a análise de resíduos para avaliar as suposições do teste utilizado no item anterior. **
+
+**Resposta:** Vamos fazer a análise de resíduos utilizando o teste Shapiro-Wilk nos resíduos do modelo ajustado. Segue que,
+
+
+- **Hipoteses:**
+$$
+\left\{\begin{array}{ll}
+  H_0:\text{ Resíduos tem distribuição Normal },\\
+  H_1: \text{ Resíduos não tem distribuição Normal.}.\\
+\end{array}\right.
+$$
+```{r}
+# analise de resíduos
+residuos <- modelo$residuals
+shapiro.test(residuos)
+```
+
+- **Nível de significância de 0.05:** p-value = 0.4131 
+
+- **Estatística do teste:** W=0.98091
+
+- **Conclusão:** com nível de significancia de 0.05, não rejeita-se $H_0$, ou seja, os resíduos da reta de regressão estimada possuem distribuição Normal.
+
+```{r}
+anova<- aov(modelo)
+plot(anova, 1) # avalia os valores ajustados com os resíduos
+
+plot(anova, 2) # avalia os resíduos
+
+dados[c(17,35,61),]
+
+```
+
+Os resíduos apresentam distribuição aproximadamente normal e não há padrão sistemático aparente, indicando que as suposições do modelo linear foram atendidas.
+Assim, o modelo é adequado para descrever a relação entre o tempo de serviço e o nível de dióxido de carbono no sangue. Existem 3 valores discrepantes que são interessantes de serem avaliados, a saber os exames de número 17, 35 e 61, por serem outliers nas caldas da distribuição dos resíduos.
+
+
+**2) Uma pesquisa avaliou pacientes com câncer em um grande hospital. Utilizando as informações de uma amostra de pacientes sobre o estadiamento da doença e o tempo de sobrevida, em meses, determine:**
+
+```{r}
+dadosATV2 <- read_excel("dados.xlsx", sheet = "AtividadeEx2")
+head(dadosATV2)
+
+attach(dadosATV2)
+Sobrevida <- `Tempo de sobrevida em meses` # mudando a variável
+
+summary(dadosATV2)
+```
+**a) O gráfico de dispersão entre as duas variáveis do estudo.**
+
+**Resposta:** Neste estudo temos duas variáveis distintas:
+
+- A variável "Estadiamento" caracterizada por qualitativa ordinal com níveis I, II, III e IV;
+
+- A variável "Tempo de sobrevida em meses", sendo esta qualitativa contínua.
+
+Como temos uma variável categórica (Estadiamento), o gráfico mais apropriado para visualizar a relação entre as variáveis é o boxplot.
+
+```{r}
+ggplot(dadosATV2, aes(x = Estadiamento, y = Sobrevida)) +
+  geom_boxplot(fill = "skyblue", color = "black") +
+  geom_jitter(width = 0.1, alpha = 0.6, color = "darkblue") +
+  labs(title = "Tempo de Sobrevida por Estadiamento do Câncer",
+       x = "Estadiamento da Doença",
+       y = "Tempo de Sobrevida (meses)") +
+  theme_minimal()
+```
+Cada boxplot representa a distribuição dos tempos de sobrevida dentro de cada estadiamento. 
+
+- Estágio I: apresenta as maiores medianas e amplitudes, com tempos de sobrevida geralmente acima de 35 meses, indicando pacientes em estágio inicial com melhor prognóstico.
+
+- Estágio II: apresenta uma leve redução da mediana, em torno de 31 meses;
+
+- Estágio III: a mediana diminui ainda mais e há maior dispersão, indicando mais variabilidade do avanço da doença;
+
+- Estágia IV: apresenta a menor mediana e menores tempos de sobrevida, reforçando o efeito negativo do avanço da doença.
+
+
+**b) Se há uma relação entre as duas variáveis, com nível de significância de 0,05.**
+
+**Resposta:** Verificando a Normalidade das variáveis com Shapiro-Wilk separadamente para os pacientes de cada estadiamento. Temos que
+
+- **Hipóteses:**
+$$
+\left\{\begin{array}{ll}
+  H_0:\text{ Os dados do grupo seguem distribuição Normal },\\
+  H_1: \text{ Os dados do grupo não seguem distribuição Normal.}.\\
+\end{array}\right.
+$$
+
+
+```{r}
+# Teste de normalidade dentro de cada estadiamento
+by(dadosATV2$`Tempo de sobrevida em meses`, dadosATV2$Estadiamento, shapiro.test)
+
+```
+Como resultado do teste de normalidade, temos
+
+| Estadiamento | W      | p-valor    | Conclusão ($\alpha = 0.05)$  |
+| ------------ | ------ | ---------- | ---------------------------- |
+| I            | 0.8407 | 0.1008     | Não rejeita ($H_0$): normal  |
+| II           | 0.9199 | 0.2849     | Não rejeita ($H_0$): normal  |
+| III          | 0.8346 | **0.0269** | Rejeita ($H_0$): não normal  |
+| IV           | 0.9430 | 0.2728     | Não rejeita ($H_0$): normal  |
+
+**Conclusão:** Como o grupo de estadiamento nível III não apresenta distribuição Normal, a suposição de normalidade não é atendida para todos os grupos. 
+
+Portanto, vamos utilizar o teste não-paramétrico de Kruskal-Wallis. Segue que:
+
+- **Hipóteses:**
+$$
+\left\{\begin{array}{ll}
+  H_0:\text{ As distribuições de sobrevida são iguais entre os estadiamentos },\\
+  H_1: \text{ Pelo menos uma distribuição difere}.\\
+\end{array}\right.
+$$
+```{r}
+kruskal.test(`Tempo de sobrevida em meses` ~ Estadiamento, data = dadosATV2)
+
+```
+- **Nível de significância de 0.05:** p-value < 0.0001. 
+
+- **Estatística do teste:** 30.521 com gl = 3.
+
+- **Conclusão:** com nível de significancia de 0.05, rejeita-se $H_0$, há diferença estatisticamente significativa nos tempos de sobrevida entre os diferentes estadiamentos do câncer.
+
+Finalmente, vamos fazer as comparações multiplas e observar diferenças entre os estadiamentos, considerando que um dos grupos não tem dstribuição Normal. Vamos identificar entre quais pares de estadiamento existem diferenças significativas.
+
+- **Hipóteses:**
+$$
+\left\{\begin{array}{ll}
+  H_0:\text{ As medianas de sobrevida dos dois grupos são iguais },\\
+  H_1: \text{ As medianas de sobrevida dos dois grupos são diferentes}.\\
+\end{array}\right.
+$$
+
+```{r}
+library(pgirmess)
+kruskalmc(Sobrevida~Estadiamento)
+(tapply(Sobrevida, Estadiamento, median))
+```
+- **Nível de significância:** $\alpha = 0.05$.
+
+- **Resultados do teste de comparação múltiplas:**
+
+| Comparação  | Diferença observada | Diferença crítica | Decisão ($\alpha=0.05$)  | Conclusão                     |
+| ----------- | ------------------- | ----------------- |------------------------- | ----------------------------- |
+| I - II      | 7.46                | 18.29             |      Não rejeita ($H_0$) | Mesma mediana de sobrevida    |
+| I - III     | 16.86               | 18.59             |      Não rejeita ($H_0$) | Mesma mediana de sobrevida    |
+| **I - IV**  | **30.00**           | **16.89**         |      **Rejeita** ($H_0$) | IV tem menor sobrevida que I  |
+| II - III    | 9.41                | 16.05             |      Não rejeita ($H_0$) | Mesma mediana de sobrevida    |
+| **II - IV** | **22.54**           | **14.04**         |      **Rejeita** ($H_0$) | IV tem menor sobrevida que II |
+| III - IV    | 13.14               | 14.44             |      Não rejeita ($H_0$) | Mesma mediana de sobrevida    |
+
+**Conclusão:** Com nível de signficância de 0.05, o teste de Kruskal-Wallis indicou diferença significativa entre os tempos de sobrevida dos diferentes estadiamentos. As comparações múltiplas mostraram que as diferenças ocorrem entre os estágios iniciais (I e II) e o estágio IV, sendo este último associado a menor tempo de sobrevida. Não foram observadas diferenças significativas entre os estágios intermediários (II vs III, III vs IV ou I vs III.)
+
+
+
+

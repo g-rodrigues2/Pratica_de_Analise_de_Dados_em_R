@@ -1,0 +1,95 @@
+---
+title: "Prática 7: Testes Qui-Quadrado"
+author: "Guilherme Rodrigues"
+date: "`r format(Sys.Date(), '%d de %B de %Y')`"
+output:
+  html_document:
+    df_print: paged
+lang: "pt-BR"
+---
+
+<!-- ```{r setup, include=FALSE} -->
+<!-- knitr::opts_chunk$set(echo = TRUE) -->
+<!-- ``` -->
+```{r}
+options(encoding = "UTF-8")
+#limpar a memória
+rm(list = ls())
+```
+
+**1)** Um estudo avaliou a preferência alimentar de espécies de peixes ornamentais de água doce. Os diferentes tipos de rações foram ofertados para cada peixe e analisou-se aquela que o peixe mais se alimentou. A partir das informações experimentais obtidas, verifique, por meio de um teste estatístico, se a preferência por algum tipo de ração depende da espécie do peixe, com nível de significância de 0,05. 
+
+**Resposta:** Para uma melhor observação dos dados, vamos criar uma tabela de contingência e plotar os dados em um gráfico.
+
+```{r}
+library(readxl)
+library(ggplot2)
+dados <- read_excel("dados.xlsx", sheet = "Atividade")
+head(dados)
+dim(dados)
+tabela <- table(dados$Especie, dados$Racao)
+tabela
+round(prop.table(tabela, margin = 1) * 100, 1)
+
+#data frame
+(tabela2 <- as.data.frame(tabela))
+colnames(tabela2) <- c("Especie", "Racao", "Freq")
+
+head(tabela2)
+
+ggplot(tabela2, aes(x = Racao, y = Especie)) +
+  geom_point(aes(size = Freq), shape = 21, fill = rgb(0, 1, 1, 0.5)) +
+  scale_size_area(max_size = 20) +
+  labs(x = "Tipo de Ração", y = "Espécie",
+       title = "Preferência alimentar de peixes ornamentais") +
+  guides(size = guide_legend(title = "Frequência")) +
+  geom_text(aes(label = Freq), 
+            color = "black", 
+            size = 3, 
+            vjust = 0.5, hjust = 0.5) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+As hipóteses a serem consideradas são:
+
+$$\left\{ \begin{array}{ll}
+  H_0:\text{ A preferência alimentar não depende da espécie do peixe (independência)}\\
+  H_1:\text{ A preferência alimentar depende da espécie do peixe (dependência)}
+\end{array}\right. $$
+
+Vamos utilizar o teste Qui-Quadrado para comparar os valores observados com os esperados sob independência.
+
+```{r}
+library(pwr)
+teste <- chisq.test(tabela)
+teste
+
+teste$observed
+teste$expected
+teste$stdres #resíduos padronizados
+
+df <- (nrow(tabela)-1)*(ncol(tabela)-1)
+chi2 <- as.numeric(teste$statistic)
+n    <- sum(tabela)
+ES    <- sqrt(chi2 / (n * df)) #gl=4 e n=180
+
+pwr.chisq.test(w = ES, df = df,
+               sig.level = 0.05, power = 0.80)
+```
+Resultado do teste e interpretação:
+
+- **Teste:** qui-quadrado de independência  
+- **Estatística:** \(\chi^2 = 36.194\)  
+- **Graus de liberdade:** \(gl = (r-1)(c-1) = (3-1)(3-1) = 4\)  
+- **p-valor:** \(2.64 \times 10^{-7}\)
+
+**Decisão:** Como \(p < 0.05\), rejeitamos \(H_0\). Há evidência estatisticamente significativa de **associação** entre a espécie do peixe e o tipo de ração preferida.
+
+**Tamanho de efeito:** \(ES \approx 0.22\).
+
+**Poder do teste:** Para detectar um efeito dessa magnitude com \(80\%\) de poder e \(\alpha = 0.05\), seriam necessários aproximadamente **237 indivíduos**. O estudo contou com **180**, portanto o experimento não estava bem dimensionado para um poder de 80%.
+
+**Conclusão:** Com nível de significância de \(5\%\), a preferência por ração **depende da espécie**. Em termos práticos, diferentes espécies tendem a concentrar suas escolhas em tipos distintos de ração. As frequências esperadas em todas as células foram adequadas ($\geq5$), validando a aplicação do teste qui-quadrado. Os resíduos padronizados indicaram quais combinações espécie versus ração mais contribuíram para o \(\chi^2\) obtido. Por exemplo, verificamos que os Tetras preferiram muito mais ração liofilizada ($|R|\approx 3.7$) do que granulada, os Paulistinhas seguiram a mesma linha, preferindo mais ração liofilizada ($|R|\approx 4.2$) e Neons se distribuíram de forma parecida ao esperado, sem grandes desvios ($|R|<2$).
+
+

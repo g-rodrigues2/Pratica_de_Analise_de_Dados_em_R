@@ -1,0 +1,289 @@
+---
+title: 'Prática 5: Teste de Hipótese'
+author: "Guilherme Rodrigues"
+date: "`r format(Sys.Date(), '%d de %B de %Y')`"
+output:
+  html_document:
+    df_print: paged
+lang: "pt-BR"
+---
+
+<!-- ```{r setup, include=FALSE} -->
+<!-- knitr::opts_chunk$set(echo = TRUE) -->
+<!-- ``` -->
+```{r}
+options(encoding = "UTF-8")
+#limpar a memória
+rm(list = ls())
+```
+
+**1)** Uma pesquisa deseja avaliar a eficiência de um medicamento D em desenvolvimento para pacientes com problemas cardíacos. Para realizar esta pesquisa, realizou-se uma amostra piloto com os níveis de colesterol (lipoproteínas de alta densidade, HDL) de alguns pacientes que receberam este medicamento por um determinado período:  81.6; 146.6; 118.9; 126.9; 109.8mg/dL.  Calcule o tamanho da amostra necessário para verificar se o nível de colesterol médio é menor do que 130mg/dl? Utilize um nível de significância de 0,05 e poder do teste de 80%.
+
+**Resposta:** Apresentando as hipóteses, o nível de significância, o valor da estatística do teste, valor de p e a conclusão de cada teste estatístico, temos:
+
+```{r}
+piloto <- c(81.6, 146.6, 118.9, 126.9, 109.8)
+media  <- mean(piloto) 
+dp     <- sd(piloto)
+
+## --- TESTE t (função pronta) ---
+t.test(piloto, mu = 130, alternative = "less", conf.level = 0.95)
+
+## --- Wilcoxon (mediana < 130) ---
+wilcox.test(piloto, mu = 130, alternative = "less", conf.int = TRUE, conf.level = 0.95)
+
+```
+
+Foi realizado um **teste t de uma amostra** para verificar se a média de HDL era menor do que 130 mg/dL. As hipóteses consideradas foram: 
+\[
+H_0:\; \mu = 130 \quad \text{vs} \quad H_1:\; \mu < 130.
+\]
+
+Adotando nível de significância de 5%, obteve-se estatística do teste \(t = -1,2394\) com \(gl = 4\), resultando em valor de \(p = 0,1415\). Como \(p > 0,05\), não se rejeita \(H_0\), indicando que não há evidência estatística de que a média de HDL seja inferior a 130 mg/dL.
+
+De forma complementar, foi aplicado o **teste de Wilcoxon signed-rank** para a mediana. As hipóteses foram:
+\[
+H_0:\; \text{mediana} = 130 \quad \text{vs} \quad H_1:\; \text{mediana} < 130.
+\]
+O resultado foi \(V = 3\) com valor de \(p = 0,1562\). Novamente, como \(p > 0,05\), não se rejeita \(H_0\). Assim, ambos os testes levam à mesma conclusão: com base nessa amostra piloto de cinco pacientes, não há evidência estatística, ao nível de 5%, de que o tratamento reduza o HDL para valores médios ou medianos inferiores a 130 mg/dL.
+
+Calculando o tamanho da amostra necessário, temos:
+
+```{r}
+
+efeito <- (media-130)/dp
+
+library(pwr)
+pwr.t.test(d = efeito,
+           sig.level = 0.05,
+           power = 0.80,
+           type = "one.sample",
+           alternative = "less")
+
+```
+Portanto, para detectar uma diferença do valor de referência de 130 mg/dL, assumindo que a média verdadeira seja cerca de 116.8 mg/dL (como na amostra piloto) e que o desvio-padrão seja ~23.9, precisamos de aproximadamente 22 pacientes para ter 80% de poder no teste t unilateral (nível de significância de 5%).
+
+```{r}
+boxplot(piloto, horizontal = TRUE, col = "skyblue",
+        main = "Níveis de HDL (mg/dL) - Amostra Piloto")
+abline(v = 130, col = "red", lwd = 2, lty = 2)  # valor de referência
+
+powers <- sapply(5:50, function(n)
+  pwr.t.test(n = n, d = efeito, sig.level = 0.05,
+             type = "one.sample", alternative = "less")$power)
+
+plot(5:50, powers, type = "l", lwd = 2, col = "darkblue",
+     xlab = "Tamanho da amostra (n)", ylab = "Poder do teste",
+     main = "Curva de poder para detectar diferença de 130 mg/dL")
+abline(h = 0.8, col = "red", lty = 2)
+abline(v = ceiling(pwr.t.test(d = efeito, sig.level = 0.05,
+                              power = 0.8, type = "one.sample",
+                              alternative = "less")$n), 
+       col = "darkgreen", lty = 2)
+```
+O boxplot mostra como os dados se distribuem em relação ao valor de referência (130 mg/dL), e a curva de poder do teste mostra que, com aproximadamente 22 indivíduos, atingimos 80% de poder estatístico, confirmando os resultados.
+
+**2)** Considerando a pesquisa do exercício anterior, os níveis de colesterol de pacientes submetidos ao medicamento D foram avaliados e estão descritos abaixo. 
+
+-------------------------------------------
+81.6 146.6 118.9 126.9 109.8 138.2 102.2 120.8 134.0 128.6 117.5 110.5 150.4 114.1 108.3 90.6 123.9 114.3 93.9 \\
+128.1 121.7 108.0 102.0 113.0 111.2 123.3 129.3 135.6 118.2 136.7
+ ------------------------------------------
+ 
+**a.** Verifique a suposição de normalidade da variável do estudo (utilize pelo menos dois testes).
+
+**Resposta:** 
+
+```{r}
+hdl <- c(
+  81.6, 146.6, 118.9, 126.9, 109.8, 138.2, 102.2, 120.8, 134.0, 128.6,
+  117.5, 110.5, 150.4, 114.1, 108.3, 90.6, 123.9, 114.3, 93.9, 128.1,
+  121.7, 108.0, 102.0, 113.0, 111.2, 123.3, 129.3, 135.6, 118.2, 136.7
+)
+length(hdl)
+
+
+# 1) Kolmogorov–Smirnov "exato" (nota: pressupõe média e dp conhecidos)
+ks_exato <- ks.test(hdl, "pnorm", mean(hdl), sd(hdl))
+
+library(nortest)
+# 2) Lilliefors (KS adaptado quando média e dp são estimados)
+lillie   <- lillie.test(hdl)
+
+# 3) Anderson–Darling
+ad       <- ad.test(hdl)
+
+# 4) Cramér–von Mises
+cvm      <- cvm.test(hdl)
+
+# 5) Shapiro–Wilk
+shapiro  <- shapiro.test(hdl)
+
+ks_exato
+lillie
+ad
+cvm
+shapiro
+
+```
+
+```{r}
+pvals <- c(
+  `KS (exato)`       = ks_exato$p.value,
+  `Lilliefors (KS)`  = lillie$p.value,
+  `Anderson–Darling` = ad$p.value,
+  `Cramér–von Mises` = cvm$p.value,
+  `Shapiro–Wilk`     = shapiro$p.value
+)
+pvals
+```
+
+Em todos os testes (KS, Lilliefors, Anderson–Darling, Cramér–von Mises e Shapiro–Wilk) os p-valores foram muito superiores a 0,05, indicando ausência de evidências para rejeitar a hipótese nula de normalidade. 
+
+```{r}
+par(mfrow = c(1, 2))
+
+# Histograma com curva normal ajustada
+hist(hdl, probability = TRUE, col = "lightblue",
+     main = "Histograma com curva normal",  
+     xlab = "Níveis de HDL (mg/dL)", 
+     ylab = "Densidade")
+   
+curve(dnorm(x, mean(hdl), sd(hdl)), add = TRUE, lwd = 2, col = "red")
+
+# Q–Q plot
+qqnorm(hdl, main = "Gráfico Q–Q da Normalidade",
+            xlab = "Quantis teóricos da Normal",
+            ylab = "Quantis observados de HDL")
+qqline(hdl, col = "red", lwd = 2)
+
+par(mfrow = c(1, 1))
+```
+De fato, os gráficos (histograma com curva normal e Q–Q plot) corroboram essa conclusão, sugerindo que a distribuição dos níveis de HDL é aproximadamente normal.
+
+**b.** O nível médio de colesterol HDL destes pacientes é menor do que 130mg/dl? Utilize um nível de significância de 0,05.
+
+**Resposta:** Apresentando as hipóteses, o nível de significância, o valor da estatística do teste, valor de p e a conclusão de cada teste estatístico, temos:
+
+```{r}
+media_hdl  <- mean(hdl) 
+dp_hdl     <- sd(hdl)
+
+## --- TESTE t ---
+t.test(hdl, mu = 130, alternative = "less", conf.level = 0.95)
+
+## --- Wilcoxon (mediana < 130) ---
+wilcox.test(hdl, mu = 130, alternative = "less", conf.int = TRUE, conf.level = 0.95)
+
+
+```
+Como anteriormente, realizamos um **teste t de uma amostra** para verificar se a média de HDL era menor do que 130 mg/dL. As hipóteses consideradas foram: 
+\[
+H_0:\; \mu = 130 \quad \text{vs} \quad H_1:\; \mu < 130.
+\]
+
+Adotando nível de significância de 5%, obteve-se estatística do teste \(t = -3.9422\) com \(gl = 29\), resultando em valor de \(p = 0.000234\). Como \(p < 0,05\), rejeita-se \(H_0\), indicando que há evidência estatística de que a média de HDL seja inferior a 130 mg/dL.
+
+Do mesmo modo, complementamos com o **teste de Wilcoxon signed-rank** para a mediana. As hipóteses foram:
+\[
+H_0:\; \text{mediana} = 130 \quad \text{vs} \quad H_1:\; \text{mediana} < 130.
+\]
+O resultado foi \(V = 70\) com valor de \(p = 0.0002301\). Novamente, como \(p < 0,05\), rejeita-se \(H_0\). Assim, ambos os testes levam à mesma conclusão: de fato, existe evidência estatística, com nível de 5%  de que o tratamento reduza os níveis de HDL  para valores médios ou medianos inferiores a 130 mg/dL.
+
+**c.** Obtenha o intervalo de confiança de 95% para o nível de colesterol médio destes pacientes
+
+**Resposta:** Como a variância populacional é desconhecida, o intervalo de confiança de 95% para a média de HDL pode ser obtida pela distribuição t-studet. Segue que
+
+```{r}
+library(ggplot2)
+# Estatísticas
+n     <- length(hdl)
+media <- mean(hdl)
+media
+dp    <- sd(hdl)
+erro  <- qt(0.975, df = n-1) * dp / sqrt(n)
+
+lim_inf <- media - erro
+lim_sup <- media + erro
+c(lim_inf, lim_sup)
+# Curva normal ajustada
+x_vals <- seq(min(hdl)-10, max(hdl)+10, length.out = 300)
+dens   <- dnorm(x_vals, mean = media, sd = dp)
+df_plot <- data.frame(x = x_vals, y = dens)
+df_ic   <- subset(df_plot, x >= lim_inf & x <= lim_sup)
+
+# Gráfico
+ggplot(df_plot, aes(x, y)) +
+  geom_line(color = "blue", size = 1) +
+  geom_area(data = df_ic, aes(x, y), fill = "skyblue", alpha = 0.5) +
+  geom_vline(xintercept = media, color = "red", linetype = "dashed", size = 1) +
+  geom_vline(xintercept = lim_inf, color = "darkblue", linetype = "dashed", size = 1) +
+  geom_vline(xintercept = lim_sup, color = "darkblue", linetype = "dashed", size = 1) +
+  labs(title = "Distribuição Normal Ajustada com IC de 95% da Média",
+       x = "HDL (mg/dL)",
+       y = "Densidade") +
+  theme_minimal(base_size = 14)
+
+```
+
+
+Portanto, o intervalo de confiança é [112.6957; 124.5176] e a média estimada está em torno de 118.6 mg/dL e que, com 95% de confiança, o verdadeiro valor da média populacional de HDL está dentro do intervalo.
+
+**3)** A secretaria municipal afirmou que no máximo 10% das residências possuem criadouros de dengue. Um levantamento foi realizado e foram encontrados criadouros de dengue em 42 de 596 residências visitadas. 
+
+**a.** Com nível de significância de 0,05, verifique a veracidade da afirmação. 
+
+**Resposta:** Construindo o teste de hipóteses, temos
+\[
+H_0:\; p \leq 0,10 \quad\text{vs}\quad H_1:\; p > 0,10
+\]
+
+
+```{r}
+
+x <- 42; n <- 596; p0 <- 0.10
+
+# Teste aproximado (sem correção), unilateral à ESQUERDA
+prop.test(x, n, p = p0, alternative = "less", correct = FALSE)
+
+# Teste exato binomial, unilateral à ESQUERDA
+binom.test(x, n, p = p0, alternative = "less")
+
+```
+Com base em uma amostra de \(n = 596\) residências, das quais \(x = 42\) apresentaram criadouros, obteve-se uma proporção amostral de 
+
+\[
+\hat{p} = \frac{42}{596} \approx 0{,}0705 \; (7{,}05\%).
+\]
+
+Ao realizar o teste unilateral à esquerda de \(H_0: p = 0{,}10\) contra \(H_1: p < 0{,}10\), tanto o teste aproximado de proporções quanto o teste binomial exato resultaram em *p*-valores inferiores a 0,05 ($\approx$ 0,007–0,008).  
+
+Assim, rejeita-se \(H_0\) ao nível de significância de 5%. Portanto, conclui-se que a proporção populacional de residências com criadouros de dengue é significativamente inferior a 10%, validando e até fortalecendo a afirmação de que no máximo 10% das residências apresentam o problema.
+
+
+**b.** Calcule o intervalo de confiança de 95% para a proporção de residência com criadouro de dengue.
+
+**Resposta:** Calculando o intervalo de confiança de 95%, temos:
+
+```{r}
+prop.test(x, n, correct = FALSE)$conf.int
+
+binom.test(x, n, alternative = "less")$conf.int
+```
+Portanto, os intervalos de confiança de 95% obtidos foram, respectivamente, 
+\([0,0526; 0,0939]\) e \([0,0000; 0,0902]\).  
+Observa-se que o intervalo unilateral superior de 95% possui limite máximo inferior a 10%, 
+o que reforça a evidência de que a verdadeira proporção de residências com criadouros 
+é menor do que o valor estipulado pela Secretaria Municipal.
+
+
+**c.** Quantas residências devem ser avaliadas num próximo levantamento, considerando o nível de significância de 0,05 e poder de 80% com objetivo de avaliar a afirmação da secretaria municipal? 
+
+**Resposta:**
+
+```{r}
+p1 <- 42/596
+ES  <- 2*asin(sqrt(p1)) - 2*asin(sqrt(p0))
+pwr.p.test(h = ES, sig.level = 0.05, power = 0.80, alternative = "less")
+```
+Para avaliar a afirmação da Secretaria Municipal com poder estatístico adequado, deve-se planejar um próximo levantamento com **aproximadamente 549 residências**. Em termos práticos, recomenda-se arredondar para **cerca de 550 a 600 residências**, garantindo robustez frente a possíveis perdas de dados.

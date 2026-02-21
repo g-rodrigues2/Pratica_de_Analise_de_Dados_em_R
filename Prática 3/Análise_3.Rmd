@@ -1,0 +1,391 @@
+---
+title: "Distribuições de Probabilidade"
+author: "Guilherme Rodrigues"
+date: "`r format(Sys.Date(), '%d de %B de %Y')`"
+output:
+  html_document:
+    df_print: paged
+lang: "pt-BR"
+---
+
+<!-- ```{r setup, include=FALSE} -->
+<!-- knitr::opts_chunk$set(echo = TRUE) -->
+<!-- ``` -->
+```{r}
+options(encoding = "UTF-8")
+```
+
+
+**1)** Em tanques de um pesqueiro, a probabilidade de cada alevino estar com tamanho ideal de comercialização é igual a 0.70. Ao selecionarmos 20 alevinos ao acaso, qual é a probabilidade de observarmos
+
+**a.** no máximo 12 em condições de venda?		
+
+**Resposta:** A probabilidade de observarmos no máximo 12 alevinos em condições de venda pode ser calculada usando a distribuição binomial. A fórmula para a probabilidade binomial é dada por:
+$$P(X=k) = \binom{n}{k} p^k (1-p)^{n-k}$$
+onde n é o número total de alevinos (20), k é o número de alevinos em condições de venda (12), e p é a probabilidade de um alevino estar em condições de venda (0.70). Utilizando o R, podemos calcular essa probabilidade:
+```{r}
+n <- 20
+p <- 0.70
+k <- 12
+
+prob_max_12 <- sum(dbinom(0:k, n, p))
+round(prob_max_12, 3)
+```
+Portanto, a probabilidade de observarmos no máximo 12 alevinos em condições de venda é aproximadamente 0.228.
+
+**b.** entre 13 e 17 em condições de venda?
+
+**Resposta:** A probabilidade de observarmos entre 13 e 17 alevinos em condições de venda pode ser calculada somando as probabilidades individuais para k = 13, 14, 15, 16 e 17. Utilizando o R, podemos calcular essa probabilidade:
+```{r}
+prob_13_17 <- sum(dbinom(13:17, n, p))
+round(prob_13_17, 3)
+```
+Portanto, a probabilidade de observarmos entre 13 e 17 alevinos em condições de venda é aproximadamente 0.737.
+
+**c.** pelo menos 16 em condições de venda?
+
+**Resposta:** A probabilidade de observarmos pelo menos 16 alevinos em condições de venda pode ser calculada subtraindo a probabilidade de observarmos no máximo 15 alevinos da unidade. Utilizando o R, podemos calcular essa probabilidade:
+```{r}
+prob_pelo_menos_16 <- 1 - sum(dbinom(0:15, n, p))
+round(prob_pelo_menos_16, 3)
+```
+Portanto, a probabilidade de observarmos pelo menos 16 alevinos em condições de venda é aproximadamente 0.238.
+
+Podemos plotar os gráficos dessas distribuições para melhor visualização:
+```{r}
+library(ggplot2)
+ensaios <- 0:n
+probabilidades <- dbinom(ensaios, n, p)
+tabela <- data.frame(ensaios, probabilidades)
+tabela
+ggplot(tabela, aes(ensaios, probabilidades)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "Distribuição Binomial dos Alevinos em Condições de Venda",
+       x = "Número de Alevinos em Condições de Venda",
+       y = "Probabilidade") +
+  theme_minimal()
+```
+Podemos observar pelo gráfico que a maior probabilidade está em torno de 13 a 15 alevinos em condições de venda.
+
+**2)** Considere que o número de casos de acidentes envolvendo escorpiões segue uma distribuição Poisson com média de 6 por mês em uma cidade. Calcule a probabilidade, de termos, em um mês
+
+**a.** 7 acidentes?
+
+**Resposta:** A probabilidade de observarmos exatamente 7 acidentes em um mês pode ser calculada usando a distribuição de Poisson. A fórmula para a probabilidade de Poisson é dada por:
+$$P(X=k) = \frac{e^{-\lambda} \lambda^k}{k!}$$
+onde $\lambda$ é a média de acidentes (6) e k é o número de acidentes (7). Utilizando o R, podemos calcular essa probabilidade:
+```{r}
+lambda <- 6
+k <- 7
+prob_7_acidentes <- dpois(k, lambda)
+round(prob_7_acidentes, 3)
+```
+Logo, a probabilidade de termos exatamente 7 acidentes em um mês é aproximadamente 0.138.
+
+**b.** pelo menos 4 acidentes?
+
+**Resposta:** A probabilidade de observarmos pelo menos 4 acidentes em um mês pode ser calculada subtraindo a probabilidade de observarmos no máximo 3 acidentes da unidade. Utilizando o R, podemos calcular essa probabilidade:
+```{r}
+prob_pelo_menos_4 <- 1 - sum(dpois(0:3, lambda))
+round(prob_pelo_menos_4, 3)
+```
+Portanto, a probabilidade de termos pelo menos 4 acidentes em um mês é aproximadamente 0.849.
+
+**c.** No máximo 10 acidentes?
+
+**Resposta:** A probabilidade de observarmos no máximo 10 acidentes em um mês pode ser calculada somando as probabilidades individuais para k = 0, 1, 2, ..., 10. Utilizando o R, podemos calcular essa probabilidade:
+```{r}
+prob_max_10 <- sum(dpois(0:10, lambda))
+round(prob_max_10, 3)
+```
+Portanto, a probabilidade de termos no máximo 10 acidentes em um mês é aproximadamente 0.957.
+
+Graficamente, a distribuição de Poisson para o número de casos de acidentes com escorpião pode ser representada da seguinte forma:
+```{r}
+ensaios_poisson <- 0:15
+probabilidades_poisson <- dpois(ensaios_poisson, lambda)
+tabela_poisson <- data.frame(ensaios_poisson, probabilidades_poisson)
+tabela_poisson
+ggplot(tabela_poisson, aes(ensaios_poisson, probabilidades_poisson)) +
+  geom_bar(stat = "identity", fill = "lightgreen") +
+  labs(title = "Distribuição de Poisson dos Acidentes com Escorpiões",
+       x = "Número de Acidentes",
+       y = "Probabilidade") +
+  theme_minimal()
+```
+Isso mostra que a probabilidade de ocorrerem entre 5 e 6 acidentes é a mais alta na cidade em questão.
+
+
+**3)** Suponha que os estágios de câncer no pulmão seguem uma distribuição Multinomial em que p1=0.15, p2=0.25, p3=0.25, p4=0.35, em que $p_i$ representa a probabilidade de selecionar um paciente com câncer no estágio $i$. Ao selecionar 20 pacientes em um grande instituto para tratamento oncológico, qual é a probabilidade de observarmos 
+
+**a.** 3, 5, 5 nos estágios 1 a 3 e os demais no estágio 4?
+
+**Resposta:** A distribuição multinomial é dada por
+$$P(X_1 = n_1, X_2 = n_2, ..., X_k = n_k) = \frac{n!}{n_1! n_2! ... n_k!} p_1^{n_1} p_2^{n_2} ... p_k^{n_k}$$
+onde $p_i$ é a probabilidade de obter o resultado da classe $i$ em um único ensaio, e $n$ é o número total de ensaios. utilizando o R, temos
+```{r}
+n <- 20
+p <- c(0.15, 0.25, 0.25, 0.35)
+n_values <- c(3, 5, 5, n - sum(c(3, 5, 5)))
+prob <- dmultinom(n_values, n, p)
+round(prob, 5)
+
+```
+Logo, a probabilidade de observarmos 3, 5, 5 nos estágios 1 a 3 e os demais no estágio 4 é aproximadamente 0.01157
+
+**b.** 5, 4, 3 nos estágios 1 a 3 e os demais no estágio 4?
+
+**Resposta:** No R, segue que
+```{r}
+n_values_b <- c(5, 4, 3, n - sum(c(5, 4, 3)))
+prob_b <- dmultinom(n_values_b, n, p)
+round(prob_b, 5)
+```
+Logo, a probabilidade de observarmos 5, 4, 3 nos estágios 1 a 3 e os demais no estágio 4 é aproximadamente 0.00364.
+
+**4)** Suponha que o ganho de peso de uma gestante segue uma distribuição Normal com média e desvio-padrão iguais a 13 e 5 quilos. Qual é a probabilidade de uma gestante, selecionada ao acaso, ter um ganho de peso 
+
+**a.** menor do que 12 quilos?
+
+**Resposta:** A probabilidade de uma gestante ter um ganho de peso menor do que 12 quilos pode ser calculada usando a distribuição normal. Ela é dada por
+
+$$f(x) = \frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{(x - \mu)^2}{2\sigma^2}}$$
+
+para $-\infty < x < \infty$, $-\infty < \mu < \infty$ e $\sigma > 0$. Utilizando o R, temos
+```{r}
+mu <- 13
+sigma <- 5
+x <- 12
+prob_menor_12 <- pnorm(x, mu, sigma)
+round(prob_menor_12, 3)
+```
+Logo, a probabilidade de uma gestante ter um ganho de peso menor do que 12 quilos é aproximadamente 0.421.
+
+
+**b.** maior do que 18 quilos?
+
+**Resposta:** Utilizando o R, temos
+```{r}
+x_b <- 18
+prob_maior_18 <- 1 - pnorm(x_b, mu, sigma)
+round(prob_maior_18, 3)
+```
+Logo, a probabilidade de uma gestante ter um ganho de peso maior do que 18 quilos é aproximadamente 0.159.
+
+**c.** entre 13 e 17 quilos?
+
+**Resposta:** Utilizando o R, temos
+```{r}
+x1 <- 13
+x2 <- 17
+prob_entre_13_17 <- pnorm(x2, mu, sigma) - pnorm(x1, mu, sigma)
+round(prob_entre_13_17, 3)
+```
+Logo, a probabilidade de uma gestante ter um ganho de peso entre 13 e 17 quilos é aproximadamente 0.288.
+
+**d.** qual é o limite do ganho de peso esperado em 15% dos menores ganhos?
+
+**Resposta:** Utilizando o R, temos
+```{r}
+limite_15_menores <- qnorm(0.15, mu, sigma)
+round(limite_15_menores, 3)
+
+library(ggplot2)
+x_vals <- seq(mu - 4*sigma, mu + 4*sigma, length.out = 1000)
+y_vals <- dnorm(x_vals, mu, sigma)
+tabela_normal <- data.frame(x_vals, y_vals)
+ggplot(tabela_normal, aes(x = x_vals, y = y_vals)) +
+  geom_vline(xintercept = limite_15_menores, color = "red", linetype = "dashed")+
+  geom_line(color = "blue") +
+  geom_area(data = subset(tabela_normal, x_vals <= limite_15_menores), 
+            aes(x = x_vals, y = y_vals), fill = "lightblue", alpha = 0.5) +
+  labs(title = "Distribuição Normal do Ganho de Peso de Gestantes",
+       x = "Ganho de Peso (kg)",
+       y = "Densidade de Probabilidade") +
+  theme_minimal()
+```
+Podemos observar no gráfico a área sombreada que representa os 15% dos menores ganhos de peso. Logo, o limite do ganho de peso esperado em 15% dos menores ganhos é aproximadamente 7.818 quilos.
+
+**e.** qual é o limite do ganho de peso esperado em 5% dos maiores ganhos?
+
+**Resposta:** Utilizando o R, temos
+```{r}
+limite_5_maiores <- qnorm(0.95, mu, sigma)
+round(limite_5_maiores, 3)
+
+library(ggplot2)
+x_vals <- seq(mu - 4*sigma, mu + 4*sigma, length.out = 1000)
+y_vals <- dnorm(x_vals, mu, sigma)
+tabela_normal <- data.frame(x_vals, y_vals)
+ggplot(tabela_normal, aes(x = x_vals, y = y_vals)) +
+  geom_line(color = "blue") + 
+  geom_vline(xintercept = limite_5_maiores, color = "red", linetype = "dashed") +
+  geom_area(data = subset(tabela_normal, x_vals >= limite_5_maiores), 
+            aes(x = x_vals, y = y_vals), fill = "lightblue", alpha = 0.5) +
+  labs(title = "Distribuição Normal do Ganho de Peso de Gestantes",
+       x = "Ganho de Peso (kg)",
+       y = "Densidade de Probabilidade") +
+  theme_minimal()
+
+```
+Podemos observar que no gráfico a área sombreada que representa os 5% dos maiores ganhos de peso. Logo, o limite do ganho de peso esperado em 5% dos maiores ganhos é aproximadamente 21.224 quilos.
+
+**5)** Calcule os limites dos 2.5% e dos 5% maiores valores das distribuições abaixo.
+
+**a.** Qui-Quadrado com 10 graus de liberdade.
+
+**Resposta:** Utilizando a Tabela de Distribuição Qui-Quadrado para 10 graus de liberdade, encontramos para 2.5% o valor 20.483 e para 5% o valor 18.307. Utilizando o R, temos:
+```{r}
+df <- 10
+limite_2.5_qui <- qchisq(0.975, df)
+limite_5_qui <- qchisq(0.95, df)
+c(limite_2.5_qui, limite_5_qui)
+
+# Visualização da distribuição Qui-Quadrado
+library(ggplot2)
+tabela_chi <- data.frame(
+  x = seq(0, 25, by = 0.1),
+  Densidade = dchisq(seq(0, 25, by = 0.1), df = 10)
+)
+#pintando a região dos 2.5% maiores valores
+ggplot(tabela_chi, aes(x=x, y=Densidade)) +
+  geom_line(color="blue") +
+  geom_area(data=subset(tabela_chi, x >= qchisq(0.975, df = 10)), 
+            aes(y=Densidade), fill="red", alpha=0.5) +
+  geom_vline(xintercept = qchisq(0.975, df = 10), 
+             linetype="dashed", color="red") +
+  labs(title="Distr. Qui-Quadrado (df=10) com 2.5% Maiores Valores",
+       x="Valor", y="Densidade de Probabilidade") +
+  theme_minimal()
+
+#pintando a região dos 5% maiores valores
+ggplot(tabela_chi, aes(x=x, y=Densidade)) +
+  geom_line(color="blue") +
+  geom_area(data=subset(tabela_chi, x >= qchisq(0.95, df = 10)), 
+            aes(y=Densidade), fill="blue", alpha=0.5) +
+  geom_vline(xintercept = qchisq(0.95, df = 10), 
+             linetype="dashed", color="red") +
+  labs(title="Distr. Qui-Quadrado (df=10) com 5% Maiores Valores",
+       x="Valor", y="Densidade de Probabilidade") +
+  theme_minimal()
+
+```
+Logo, utilizando o R, temos que os limites dos 2.5% e dos 5% maiores valores da distribuição Qui-Quadrado com 10 graus de liberdade são aproximadamente 20.48318 e 18.30704, respectivamente. Podemos comparar esses resultados com os tabelados como segue:
+
+| Percentil | Valor Tabelado | Valor Calculado |
+|-----------|----------------|-----------------|
+| 2.5%      | 20.483         | 20.48318        |
+| 5.0%      | 18.307         | 18.30704        |
+
+A Tabela mostra que os resultados são iguais, até a terceira casa decimal.
+
+**b.** t de Student com 15 graus de liberdade.
+
+**Resposta:** Utilizando a tabela t-student, temos que para 15 graus de liberdade, os limites dos 2.5% e 5% maiores valores são 2.131 e 1.753, respectivamente. Utilizando o R, temos
+
+```{r}
+limite_2.5_t <- qt(0.025, df = 15, lower.tail = FALSE)
+limite_5_t <- qt(.05, df = 15, lower.tail = FALSE)
+c(limite_2.5_t, limite_5_t)
+
+# tabela da densidade t com 15 g.l.
+x_vals <- seq(-5, 5, by = 0.1)
+tabela_t <- data.frame(
+  x = x_vals,
+  Densidade = dt(x_vals, df = 15)
+)
+
+# plotando região dos 2.5% maiores
+ggplot(tabela_t, aes(x = x, y = Densidade)) +
+  geom_line(color = "blue") +
+  geom_area(
+    data = subset(tabela_t, x >= limite_2.5_t),
+    aes(x = x, y = Densidade),
+    fill = "red", alpha = 0.5
+  ) +
+  geom_vline(xintercept = limite_2.5_t, linetype = "dashed", color = "red") +
+  labs(
+    title = "Distribuição t-student (df=15) – 2.5% maiores valores",
+    x = "Valor", y = "Densidade de Probabilidade"
+  ) +  theme_minimal()
+
+# plotando região dos 5% maiores
+ggplot(tabela_t, aes(x = x, y = Densidade)) +
+  geom_line(color = "blue") +
+  geom_area(
+    data = subset(tabela_t, x >= limite_5_t),
+    aes(x = x, y = Densidade),
+    fill = "blue", alpha = 0.5
+  ) +
+  geom_vline(xintercept = limite_5_t, linetype = "dashed", color = "red") +
+  labs(
+    title = "Distribuição t-student (df=15) – 5.0% maiores valores",
+    x = "Valor", y = "Densidade de Probabilidade"
+  ) +   
+  theme_minimal()
+
+
+```
+Logo, utilizando o R, temos que os limites dos 2.5% e dos 5% maiores valores da distribuição t-student com 15 graus de liberdade são aproximadamente 2.13145 e 1.75305, respectivamente. Podemos comparar esses resultados com os tabelados como segue:
+
+| Percentil | Valor Tabelado | Valor Calculado |
+|-----------|----------------|-----------------|
+| 2.5%      | 2.131         | 2.13145        |
+| 5.0%      | 1.753         | 1.75305       |
+
+A Tabela mostra que os resultados são iguais, até a terceira casa decimal.
+
+**c.** F com 10 e 12 graus de liberdade no numerador e denominador, respectivamente.
+
+**Resposta:** Utilizando a tabela F, temos que para $v_1=10$ e $v_2=12$ graus de liberdade, os limites dos 2.5% é 3.37. A tabela F fornecida fornece os valores $f_c$ tais que $P(F>f_c)=0.025$, isto é, 2.5%. Logo, para o limite de 5% utilizaremos o R. Segue que
+```{r}
+library(ggplot2)
+
+# Graus de liberdade
+df1 <- 10
+df2 <- 12
+
+# Quantis de cauda superior
+limite_2.5_f <- qf(0.975, df1 = df1, df2 = df2)  # 2,5% maiores
+limite_5_f   <- qf(0.95,  df1 = df1, df2 = df2)  # 5% maiores
+
+c(limite_2.5_f, limite_5_f)
+# Sequência para plot
+x_vals <- seq(0, qf(0.999, df1 = df1, df2 = df2), length.out = 1200)
+tabela_f <- data.frame(
+  x = x_vals,
+  Densidade = df(x_vals, df1 = df1, df2 = df2)
+)
+
+# Gráfico para 2,5% maiores valores
+ggplot(tabela_f, aes(x = x, y = Densidade)) +
+  geom_line(color = "blue") +
+  geom_area(
+    data = subset(tabela_f, x >= limite_2.5_f),
+    aes(x = x, y = Densidade),
+    fill = "lightblue", alpha = 0.5
+  ) +
+  geom_vline(xintercept = limite_2.5_f, linetype = "dashed", color = "red") +
+  labs(
+    title = sprintf("Distribuição F (df1=%d, df2=%d) – 2,5%% maiores valores", df1, df2),
+    x = "Valor", y = "Densidade de Probabilidade"
+  ) +
+  theme_minimal()
+
+# Gráfico para 2,5% maiores valores
+ggplot(tabela_f, aes(x = x, y = Densidade)) +
+  geom_line(color = "blue") +
+  geom_area(
+    data = subset(tabela_f, x >= limite_5_f),
+    aes(x = x, y = Densidade),
+    fill = "lightblue", alpha = 0.5
+  ) +
+  geom_vline(xintercept = limite_5_f, linetype = "dashed", color = "red") +
+  labs(
+    title = sprintf("Distribuição F (df1=%d, df2=%d) – 5.0%% maiores valores", df1, df2),
+    x = "Valor", y = "Densidade de Probabilidade"
+  ) +
+  theme_minimal()
+
+```
+Podemos ver que com relação ao quantil de 2.5%, o valor calculado pelo R foi igual ao observado na tabela, a menos das casas decimais. Já com relação ao aos limites de 5.0% dos maiores valores temos como resultado 2.753387.  

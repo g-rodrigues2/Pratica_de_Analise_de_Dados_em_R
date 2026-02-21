@@ -1,0 +1,250 @@
+---
+title: "Prática: Levantamento de pacientes internados em um hospital"
+author: "Guilherme Rodrigues"
+date: "`r format(Sys.Date(), '%d de %B de %Y')`"
+output:
+  html_document:
+    df_print: paged
+lang: "pt-BR"
+---
+
+
+Realizou-se um levantamento dos pacientes internados em um hospital municipal por meio de um questionário. As informações coletadas estão descritas a seguir:
+ 
+1- Cidade de origem
+
+2- Número de consultas 
+
+3- Idade, em anos
+
+4- Peso, em quilos
+
+5- Sexo
+
+6- Tabagismo
+
+7- Realiza atividade física?
+
+8- Número de dias que realiza atividade física numa semana
+
+A partir destas informações responda as seguintes perguntas:
+
+**a)** Classifique cada uma das variáveis do estudo.
+
+**Resposta:** Temos nove variáveis neste estudo, sendo elas:
+ - Identificação: Qualitativa nominal 
+ - Cidade de Origem: Qualitativa nominal
+ - Número de consultas: Quantitativa discreta
+ - Idade: Quantitativa contínua
+ - Peso: Quantitativa contínua
+ - Sexo: Qualitativa nominal
+ - Tabagismo: Qualitativa ordinal
+ - Número de vezes que fuma: Quantitativa discreta
+ 
+**b)** Importe o banco de dados para o R.
+
+**Resposta:**
+
+```{r}
+# Importando o banco de dados
+library(readxl)
+dados_atividade <- read_excel("dados.xlsx") # Lê o arquivo Excel
+head(dados_atividade)
+```
+Além disso podemos ter uma visão geral do bando de dados utilizando o comando `summary()`, que nos dá uma visão geral das variáveis presentes no banco de dados.
+
+```{r}
+summary(dados_atividade)
+```
+**c)** Quantos pacientes foram entrevistados para cada cidade?
+
+**Resposta:** Para responder essa questão utilizamos a segunda coluna do banco de dados, que contém a cidade de origem de cada paciente, e contamos quantos pacientes foram entrevistados para cada cidade. Os resultados são apresentados a seguir.
+
+```{r}
+cidade_table <- table(dados_atividade$`Cidade de origem`)
+
+cidade_df <- as.data.frame(cidade_table)
+cidade_df
+```
+
+**d)** Qual é o número mínimo, médio e máximo de consultas por paciente?
+
+**Resposta:** Para responder essa questão utilizamos a segunda coluna do banco de dados, que contém o número de consultas por paciente, fazendo os cálculos de mínimo, média e máximo de maneira geral, elencando todos os pacientes que foram entrevistados. Os resultados são apresentados a seguir.
+```{r}
+
+minimo <- min(dados_atividade$`Número de consultas`, na.rm = TRUE)
+media  <- round(mean(dados_atividade$`Número de consultas`, na.rm = TRUE),2)
+maximo <- max(dados_atividade$`Número de consultas`, na.rm = TRUE)
+print(paste("No geral, o número mínimo de consultas foi de", minimo, 
+            "; média:", media, "; máximo:", maximo))
+
+```
+Além do cálculo geral, podemos também calcular o número mínimo, médio e máximo de consultas por cidade. Para isso, utilizamos a função `tapply()`, que aplica uma função desejada para subsets de um vetor. Desse modo, conseguimos agrupar os dados por cidade e calcular as estatísticas desejadas. Os resultados são apresentados a seguir. 
+
+
+```{r}
+
+cidade <- dados_atividade$`Cidade de origem`
+num_consultas <- as.numeric(dados_atividade$`Número de consultas`)
+
+min_by_cidade  <- tapply(num_consultas, cidade, min,  na.rm = TRUE)
+mean_by_cidade <- tapply(num_consultas, cidade, mean, na.rm = TRUE)
+max_by_cidade  <- tapply(num_consultas, cidade, max,  na.rm = TRUE)
+
+resultado <- data.frame(
+  cidade = names(min_by_cidade),
+  minimo = as.numeric(min_by_cidade),
+  media  = round(as.numeric(mean_by_cidade),2),
+  maximo = as.numeric(max_by_cidade),
+  row.names = NULL
+)
+
+resultado
+
+
+```
+
+**e)** Qual é a média, mediana, desvio-padrão e quartis da idade e do peso dos pacientes? 
+
+**Resposta:** Para responder essa questão utilizamos a terceira e quarta colunas do banco de dados, que contém a idade e o peso dos pacientes, fazendo os cálculos de média, mediana, desvio-padrão e quartis de maneira geral, elencando todos os pacientes que foram entrevistados. Os resultados são apresentados a seguir.
+
+```{r}
+# Idade
+idade <- as.numeric(dados_atividade[[4]])
+media_idade <- round(mean(idade, na.rm = TRUE),2)
+mediana_idade <- median(idade, na.rm = TRUE)
+desvio_idade <- round(sd(idade, na.rm = TRUE),2)
+quartis_idade <- quantile(idade, probs = c(0.25, 0.5, 0.75), na.rm = TRUE)
+print(paste("Idade - Média:", media_idade, "; Mediana:", mediana_idade, 
+            "; Desvio-padrão:", desvio_idade, "; Quartis:", paste(quartis_idade, collapse = ", ")))
+
+# Peso
+peso <- as.numeric(dados_atividade[[5]])
+media_peso <- round(mean(peso, na.rm = TRUE),2)
+mediana_peso <- median(peso, na.rm = TRUE)
+desvio_peso <- round(sd(peso, na.rm = TRUE),2)
+quartis_peso <- quantile(peso, probs = c(0.25, 0.5, 0.75), na.rm = TRUE)
+print(paste("Peso - Média:", media_peso, "; Mediana:", mediana_peso, 
+            "; Desvio-padrão:", desvio_peso, "; Quartis:", paste(quartis_peso, collapse = ", ")))
+
+```
+Colocando em um data frame para melhor visualização, temos
+
+```{r}
+
+stats_idade_peso <- data.frame(
+  Variavel       = c("Idade", "Peso"),
+  Media          = c(media_idade,  media_peso),
+  Mediana        = c(mediana_idade, mediana_peso),
+  `Desvio-padrao`= c(desvio_idade, desvio_peso),
+  Q1             = c(unname(quartis_idade[1]), unname(quartis_peso[1])),
+  Q3             = c(unname(quartis_idade[3]), unname(quartis_peso[3])),
+  check.names = FALSE
+)
+
+print(stats_idade_peso)
+
+```
+
+**f)** Apresente a porcentagem de pacientes por nível de tabagismo e atividade física.
+
+**Resposta:** Para responder essa questão, utilizamos as colunas referentes ao tabagismo e à atividade física do banco de dados. A priori, apresentamos a porcentagem de pacientes por nível de tabagismo e atividade física separadamente, e em seguida cruzamos as informações para observar como essas duas variáveis se relacionam.
+
+
+```{r}
+#Porcentagem por nível de tabagismo
+tab_tabag <- table(dados_atividade$Tabagismo, useNA = "no")
+pct_tabag <- round(100 * prop.table(tab_tabag), 2)
+
+#Porcentagem por nível de atividade física
+tab_ativ <- table(dados_atividade$`Realiza atividade física`, useNA = "no")
+pct_ativ <- round(100 * prop.table(tab_ativ), 2)
+```
+
+Mostramos a seguir a porcentagem total por nível de tabagismo e atividade física
+
+```{r}
+pct_tabag_df <- data.frame(
+  Nivel_Tabagismo = names(pct_tabag),
+  Percentual_total = as.numeric(pct_tabag),
+  row.names = NULL,
+  check.names = FALSE
+)
+
+pct_tabag
+
+```
+Dentre todos os pacientes, temos que 34% são ex-tabagistas, 36,67 % nunca foram tabagistas e 29,33% são tabagistas.
+
+
+```{r}
+
+pct_ativ_df <- data.frame(
+  Atividade_fisica = names(pct_ativ),
+  Percentual_total = as.numeric(pct_ativ),
+  row.names = NULL,
+  check.names = FALSE
+)
+
+pct_ativ
+```
+Dentre todos os pacientes, temos que 48% não realizam atividade física e 52% realizam.
+
+
+Agora vamos cruzar as informações de Tabagismo e Atividade Física para observar como essas duas variáveis se relacionam.
+
+```{r}
+
+# Tabela cruzada: Tabagismo x Atividade física
+cross <- table(dados_atividade$Tabagismo, dados_atividade$`Realiza atividade física`, useNA = "no")
+
+# dentre os que são, foram, ou nunca foram tabagistas, qual a % que realiza ou não atividade física
+pct_por_linha <- round(100 * prop.table(cross, margin = 1), 2)
+
+# dentre quem pratica atividade física ou não, qual a % que são, foram, ou nunca foram tabagistas
+pct_por_col   <- round(100 * prop.table(cross, margin = 2), 2)
+
+```
+
+
+A seguir apresentamos as porcentagens por linha e por coluna, que nos mostram a relação entre tabagismo e atividade física. Neste caso vemos, dentre os são, foram, ou nunca foram tabagistas, qual é a porcentagem de pacientes que realizam atividade física.
+```{r}
+
+cross_pct_linha_df <- as.data.frame(pct_por_linha)
+names(cross_pct_linha_df) <- c("Tabagismo", "Atividade_fisica", "Percentual_por_tabagismo")
+cross_pct_linha_df
+```
+Os resultados nos mostram que dentre os pacientes que são tabagistas, 40,9% não realizam atividade física, enquanto 59% realizam. Já dentre os pacientes que foram tabagistas, 47% não realizam atividade física e 52,9% realizam. Por fim, dentre os pacientes que nunca foram tabagistas, 54,55% não realizam atividade física e 45,45% realizam.
+
+Agora, apresentamos a porcentagem por coluna, que nos mostra dentre quem pratica atividade física ou não, qual é a porcentagem de pacientes que são, foram, ou nunca foram tabagistas. Isto é, dentre os pacientes que realizam atividade física, qual a porcentagem que são, foram, ou nunca foram tabagistas.
+
+```{r}
+cross_pct_col_df <- as.data.frame(pct_por_col)
+names(cross_pct_col_df) <- c("Tabagismo", "Atividade_fisica", "Percentual_por_atividade")
+cross_pct_col_df 
+```
+
+Os resultados mostram que dos que praticam atividade física, a maioria é ex-tabagista, com 34,62% dos pacientes. Já dentre os que não praticam atividade física, a maioria deles nunca fumou, representando 41,67% dos pacientes.
+
+**g)** Construa uma tabela de contingência entre sexo e atividade física e calcule a porcentagem por sexo com o objetivo de comparar a frequência de atividade física entre os sexos.
+
+**Resposta:** Para responder essa questão, utilizamos as colunas referentes ao sexo e à atividade física do banco de dados. A seguir apresentamos a tabela de contingência entre sexo e atividade física, bem como a porcentagem por sexo.
+
+```{r}
+
+cross_sexo_atv <- table(dados_atividade$Sexo, dados_atividade$`Realiza atividade física`, useNA = "no")
+pct_por_sexo <- round(100 * prop.table(cross_sexo_atv, margin = 1), 2)
+df_pct_por_sexo <- as.data.frame(cross_sexo_atv)
+contagens_df <- as.data.frame(cross_sexo_atv)
+names(contagens_df) <- c("Sexo", "Atividade_fisica", "n")
+
+percent_df <- as.data.frame(pct_por_sexo)
+names(percent_df) <- c("Sexo", "Atividade_fisica", "Percentual_por_sexo")
+
+resultado <- merge(contagens_df, percent_df, by = c("Sexo", "Atividade_fisica"))
+
+resultado 
+
+
+```
+Podemos notar pelo resultado que dentre os pacientes que realizam atividade física, 58,49% são do sexo masculino e 51,55% do sexo feminino.

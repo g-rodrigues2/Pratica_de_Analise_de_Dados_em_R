@@ -1,0 +1,1085 @@
+---
+title: "Projeto Final de Análise Estatística em R"
+author: "Guilherme Rodrigues"
+date: "`r format(Sys.Date(), '%d de %B de %Y')`"
+output:
+  html_document:
+    df_print: paged
+lang: "pt-BR"
+---
+
+<!-- ```{r setup, include=FALSE} -->
+<!-- knitr::opts_chunk$set(echo = TRUE) -->
+<!-- ``` -->
+```{r}
+invisible({
+  options(encoding = "UTF-8")
+  Sys.setlocale("LC_ALL", "pt_BR.UTF-8")
+  rm(list = ls())
+})
+```
+
+**1) Em vários lugares do mundo, caranguejos apresentam grande importância cultural e socioeconômica, sustentando populações tradicionais extrativistas de baixa renda. Considerando que o tamanho de um caranguejo segue uma distribuição Normal com média de 35 cm e desvio-padrão de 7 cm e, ao selecionar um ao acaso, qual é a probabilidade de que ele tenha um tamanho**
+
+**a) menor do que 30 cm?**
+
+**Resposta:** A distribuição Normal é dada por
+
+$$ f(x) = \frac{1}{\sigma\sqrt{2\pi}}e^{-\frac{(x-\mu)^2}{2\sigma^2}}.$$
+em que $\mu = 35$ é a média e $\sigma = 7$ o desvio-padrão, para o caso dos caranguejos. Neste primeiro momento o objetivo é calcularmos a probabilidade $P(X < 30)$. Utilizando o R, temos que
+
+```{r}
+mu <- 35
+sigma <- 7
+x <- 30
+
+(prob_menor_30 <- pnorm(x, mu, sigma))
+
+```
+O resultado nos mostra que, a probabilidade de que o caranguejo selecionado ao acaso tenha tamanho menor do que 30 cm é de aproximadamente $P(X<30) = 0.2375$.
+
+**b) entre 25 e 37 cm?**
+
+**Resposta:** Análogo ao item anterior devemos calcular $P(25 < X < 37)$. Utilizando o R, temos que
+
+```{r}
+x1 <- 25
+x2 <- 37
+
+(prob_entre_25_37 <- pnorm(x2, mu, sigma) - pnorm(x1, mu, sigma))
+```
+O resultado nos mostra que a probabilidade de que o caranguejo selecionado tenha entre 25 e 37 cm é $P(25< X < 37) = 0.5358$.
+
+**c) maior do que 40 cm?**
+
+**Resposta:** Neste caso, devemos calcular a probabilidade complementar, isto é
+
+$$P(X>40) = 1-P(X<40).$$
+
+Utilizando o R, temos que
+
+```{r}
+x <- 40
+
+(prob_maior_40 <- 1 - pnorm(x, mu, sigma))
+
+```
+Portanto, a probabilidade de ao acaso ser selecionado um caranguejo maior do que 40 cm é $P(X>40) = 1 - P(X < 40) = 0.2375$.
+
+Podemos visualizar graficamente as ocorrências dos itens a, b e c:
+
+```{r}
+library(ggplot2)
+
+x <- seq(10, 60, length.out = 500)
+y <- dnorm(x, mu, sigma)
+dados <- data.frame(x, y)
+
+ggplot(dados, aes(x, y)) +
+  geom_area(data = subset(dados, x <= 30),
+            fill = "skyblue", alpha = 0.5) +
+  geom_area(data = subset(dados, x >= 25 & x <= 37),
+            fill = "lightgreen", alpha = 0.5) +
+  geom_area(data = subset(dados, x >= 40),
+            fill = "salmon", alpha = 0.5) +
+  geom_line(color = "black", size = 1) +
+  geom_vline(xintercept = c(25, 37), linetype = "dashed",
+             color = "darkgreen", linewidth = 0.9) +
+  labs(
+    title = "Distribuição Normal",
+    x = "Tamanho do caranguejo (cm)",
+    y = "Densidade de probabilidade"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+A figura ilustra a distribuição Normal associada ao tamanho dos caranguejos, assumindo média de 35 cm e desvio-padrão de 7 cm. As áreas coloridas sob a curva correspondem às probabilidades de ocorrência de determinadas faixas de tamanho. A região azul representa a probabilidade de selecionar um caranguejo com tamanho inferior a 30 cm, que corresponde a aproximadamente 23.8% da população. A área verde delimitada pelas linhas tracejadas evidência a faixa intermediária entre 25 e 37 cm, abrangendo cerca de 53.6% dos indivíduos. Por fim, a região vermelha indica a probabilidade de que o tamanho ultrapasse 40 cm, também igual a 23.8%, valor simétrico ao da porção azul devido à natureza da distribuição Normal em torno da média. A representação gráfica permite visualizar como as probabilidades se distribuem em torno da média, evidenciando que a maior concentração de indivíduos ocorre próxima ao valor médio, enquanto tamanhos muito pequenos ou muito grandes tornam-se progressivamente menos prováveis.
+
+**d) Qual é o tamanho esperado entre os 15% menores? E dos 7.5% maiores caranguejos?**
+
+**Resposta:** Para determinar os tamanhos correspondentes aos 15% menores e aos 7.5% maiores caranguejos, utilizamos a função qnorm, que retorna o quantil associado a uma dada probabilidade acumulada de uma distribuição normal. No caso dos 7.5% maiores, devemos considerar o complemento da probabiliade acumulada, isto é, $p=1-0.075 = 0.925$.
+
+```{r}
+
+library(ggplot2)
+# ?qnorm
+
+(limite_15_menores <- qnorm(0.15, mu, sigma))
+
+(limite_7.5_maiores <- qnorm(1-0.075, mu, sigma))
+
+
+x <- seq(10, 60, length.out = 500)
+y <- dnorm(x, mu, sigma)
+dados <- data.frame(x, y)
+
+ggplot(dados, aes(x, y)) +
+  geom_area(data = subset(dados, x <= 27.74497),
+            fill = "skyblue", alpha = 0.5) + 
+  geom_area(data = subset(dados, x >= 45.07672),
+            fill = "salmon", alpha = 0.5) +
+  geom_line(color = "black", size = 1) +
+  geom_vline(xintercept = c(27.74497, 45.07672), linetype = "dashed",
+             color = "darkgreen", linewidth = 0.9) +
+  labs(
+    title = "Distribuição Normal",
+    x = "Tamanho do caranguejo (cm)",
+    y = "Densidade de probabilidade"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+```
+Os resultados mostram que o limite de tamanho esperado para os 15\% menores caranguejos é de aproximadamente 27.74 cm, enquanto o limite para os 7.5\% maiores é de cerca de 45.08 cm. 
+
+O gráfico mostra que 15\% dos caranguejos possuem tamanho inferior a 27.74 cm (região azul), enquanto apenas 7.5\% ultrapassam a marca dos 45.08 cm (região vermelha). Esses valores refletem a dispersão dos dados em torno da média de 35 cm e evidenciam a assimetria nas caudas da distribuição normal quando observada em termos percentuais acumulados. 
+
+
+**2) O aleitamento materno é a estratégia que isoladamente mais previne mortes em crianças menores de cinco anos, visto que o leite materno é superior a qualquer outro leite nessa fase da vida, pois é um alimento completo que possui todos os nutrientes que o bebê precisa, sendo de mais fácil digestão. Um estudo avaliou a qualidade de leite materno coletado pelas puérperas e refrigerado numa unidade municipal de saúde. Com as informações que constam no arquivo Excel. **
+
+
+```{r}
+library(readxl)
+
+Atv2 <- read_excel("Dados.xlsx", sheet = "Exercício2")
+
+str(Atv2)
+
+Atv2 <- as.data.frame(lapply(Atv2, function(x) {
+  if (is.character(x)) {
+    as.numeric(gsub(",", ".", x))
+  } else {
+    x
+  }
+}))
+
+names(Atv2) <- c("RG", "Lactose", "Fosforo")
+
+str(Atv2)
+
+head(Atv2)
+
+attach(Atv2)
+
+
+
+
+```
+Antes de mais nada, notamos que o conjunto de dados possuía algumas inconsistencias, como valores separados por vírgulas e por pontos, fazendo o R entender as variáveis como caracteres. Desse modo, utilizando linha de código, fiz as correções nos dados, trocando todas as vírgulas por pontos e alterei o tipo de variáveis para o tipo numérico. Além disso, para evitar problemas com caracteres diferentes, alterei o nome das colunas para ficar mais adequado.
+
+
+**a) Calcule as estatísticas descritivas e o gráfico de boxplot dos níveis de lactose e de fósforo.** 
+
+**Resposta:** 
+
+```{r}
+(summary(Atv2))
+```
+A Tabela apresenta estatísticas descritivas referentes às variáveis Lactose e Fósforo encontradas nas amostras de leite materno, expressas em mg/dL, além da variável RG, que aqui é utilizada apenas como identificador dos indivíduos.
+
+Observa-se que as concentrações de Lactose variam entre 4.78 e 7.36 mg/dL, com média de 6.39 mg/dL e mediana de 6.44 mg/dL. A proximidade entre a média e mediana sugere uma distribuição aproximadamente simétrica, com dispersão moderada entre o primeiro (6.16 mg/dL) e o terceiro quartil (6.79 mg/dL). Esses resultados indicam que a maior parte dos indivíduos apresenta concentrações de lactose situadas em torno de 6.4 mg/dL, sem evidência clara de assimetria ou valores extremos relevantes.
+
+Para a concentração de Fósforo, os valores oscilam entre 10.41 mg/dL e 18.54 mg/dL, com média de 14.54 mg/dL e mediana de 14.6 mg/dL. Assim como observado para a lactose, a proximidade entre os parâmetros de tendência central aponta para uma distribuição equilibrada, embora o intervalo total de variação seja ligeiramente maior, refletindo maior amplitude na concentração desse elemento. 
+
+A análise descritiva dos dados pode ser enriquecida com a construção dos gráficos box plot de cada variável:
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+ggplot(Atv2, aes(x = "Lactose", y = Lactose)) +
+  geom_boxplot(fill = "skyblue", alpha = 0.6) +
+  geom_boxplot(aes(x = "Fósforo", y = Fosforo),
+               fill = "salmon", alpha = 0.6) +
+  labs(
+    title = "Distribuição das concentrações de Lactose e Fósforo",
+    x = NULL,
+    y = "Concentração (mg/dL)"
+  ) +
+  theme_minimal(base_size = 14)
+
+# Calculo dos outliers
+
+Q1 <- quantile(Lactose, 0.25, na.rm = TRUE)
+Q3 <- quantile(Lactose, 0.75, na.rm = TRUE)
+IQR <- Q3 - Q1
+
+lim_inf <- Q1 - 1.5 * IQR
+lim_sup <- Q3 + 1.5 * IQR
+
+outliers_lactose <- Atv2 %>%
+  filter(Lactose < lim_inf | Lactose > lim_sup)
+
+outliers_lactose
+
+```
+O boxplot mostra que os valores lactose medidos nas amostras de leite materno estão concentrados em uma faixa mais estreita, com mediana próxima de 6.4 mg/dL, o que indica baixa variabilidade e homogeneidade entre as observações. As bordas da caixa (quantis) estão próximas entre si e podemos observar a presença de um outlier abaixo do limite inferior e fora do intervalo interquartílico, referente ao indivíduo de RG 76641, que apresentou quantidade de lactose de 4.78 mg/dL.
+
+Em contraste, a concentração de fósforo apresenta maior dispersão, com valores variando aproximadamente entre 10 e 18 mg/dL e mediana em torno de 14.6 mg/dL. A amplitude interquartílica nesse caso é mais ampla, sugerindo maior heterogeneidade entre as amostras. 
+
+
+**b) Verifique a suposição de normalidade dos níveis de lactose e de fósforo, com nível de significância de 0,05.** 
+
+**Resposta:** Para verificar a suposição de normalidade dos níveis de lactose e de fósforo encontrados nas amostras de leite materno podemos utilizar alguns testes estatísticos tais como o teste de Lilliefors, Anderson-Darling, Cramer-von Mises e Shapiro-Wilk. Segue que:
+
+- **Hipóteses:**
+
+$$
+\left\{\begin{array}{ll} 
+H_0: \text{ a variável de interesse segue distribuição Normal},\\
+H_1: \text{ a variável de interesse não segue distribuição Normal.}
+\end{array}\right.
+$$
+- **Nível de significância:** $\alpha = 0.05$
+
+```{r}
+# Lilliefors 
+library(nortest)
+(lillie_fosforo <- lillie.test(Fosforo))
+(lillie_lactose <- lillie.test(Lactose))
+
+# Anderson-Darling
+(ad_fosforo <- ad.test(Fosforo))
+(ad_lactose <- ad.test(Lactose))
+
+# Cramér-Von Mises
+(cvm_fosforo <- cvm.test(Fosforo))
+(cvm_lactose <- cvm.test(Lactose))
+
+# Shapiro-Wilk
+(shapiro_fosforo <- shapiro.test(Fosforo))
+(shapiro_lactose <- shapiro.test(Lactose))
+
+```
+- **Estatísticas dos testes organizados por variável e teste utilizado:**
+
+| Teste de Normalidade            | Variável | Estatística     | p-valor | Decisão ($\alpha = 0,05$)                  |
+| ------------------------------- | -------- | --------------- | ------- | ------------------------------------------ |
+| Lilliefors                      | Fósforo  | D = 0.0724      | 0.8016  | **Não rejeita** $H_0$ - Normal             |
+| Lilliefors                      | Lactose  | D = 0.1259      | 0.0711  | **Não rejeita** $H_0$ - Normal             |
+| Anderson–Darling                | Fósforo  | A = 0.2667      | 0.6730  | **Não rejeita** $H_0$ - Normal             |
+| Anderson–Darling                | Lactose  | A = 0.7244      | 0.0547  | **Não rejeita** $H_0$ - Normal             |
+| Cramér–von Mises                | Fósforo  | W = 0.0386      | 0.7003  | **Não rejeita** $H_0$ - Normal             |
+| Cramér–von Mises                | Lactose  | W = 0.1257      | 0.0481  | **Rejeita** $H_0$ - Não normal             |
+| Shapiro–Wilk                    | Fósforo  | W = 0.9810      | 0.6605  | **Não rejeita** $H_0$ - Normal             |
+| Shapiro–Wilk                    | Lactose  | W = 0.9537      | 0.0705  | **Não rejeita** $H_0$ - Normal             |
+- **Conclusão (Fósforo):** Os resultados indicam que a a concentração de fósforo atende a suposição de normalidade em todos os testes aplicados com nível de significância de 0.05. 
+
+- **Conclusão (Lactose):** Com relação a concentração de lactose, observa-se um comportamento próximo ao limiar de rejeição, em que apenas o teste de Cramér-von Mises apresentou p-valor inferior a 0.05, sugerindo leve desvio da normalidade. Entretanto, os demais testes não rejeitam $H_0$, o que permite considerar a distribuição aproximadamente Normal para propósitos práticos, especialmente dado o tamanho moderado da amostra a qual possui tamanho 45.
+
+
+**c) O nível de lactose é maior do que 6,2 mg/dL? O nível de fósforo é menor do que 15 mg/dL? Utilize um teste de hipóteses e o nível de significância de 0,05.** 
+
+**Resposta:** Para verificar se o nível médio de lactose é superior a 6.20 mg/dL e se o nível de fósforo é inferior a 15 mg/dL, podemos aplicar o teste t de Student unilateral com nível de significância de 0.05. Como mostrado no item anterior, ambas as variáveis apresentam distribuição aproximadamente Normal, logo, justifica-se a utilização do teste t-Student, pois este pressupõe normalidade dos dados e, além disso, sua distribuição amostral se aproxima da Normal padrão à medida que o tamanho da amostra aumenta ($n>30$), mesmo quando o desvio-padrão populacional é desconhecido e estimado pela amostra.
+
+As hipóteses a serem testadas são:
+
+$$
+\left\{\begin{array}{ll} 
+H_0: \mu = 6.2\text{ e } H_1:\mu>6.2\text{ (Lactose) },\\
+H_0: \mu = 15\text{ e } H_1:\mu<15\text{ (Fósforo) }.\\
+\end{array}\right.
+$$
+```{r}
+(t.test(Lactose, mu = 6.2, alternative = "greater"))
+
+(t.test(Fosforo, mu = 15, alternative = "less"))
+
+```
+- **Estatística do teste organizado por variável:**
+
+| Variável | Estatística t | gl       | p-valor | Decisão ($\alpha=0,05$)   |
+| -------- | ------------- |----------| ------- | --------------------------|
+| Lactose  | t = 2.21      |  44      | 0.016   | **Rejeita** $H_0$         |
+| Fósforo  | t = -1.54     |  44      | 0.065   | **Não Rejeita** $H_0$     |
+
+- **Conclusão (Lactose):** com nível de significância de 0.05, rejeta-se $H_0$, indicando que o nível médio é siginificativamente maior do que 6.2 mg/dL.
+
+- **Conclusão (Fósforo):** com nível de significância de 0.05, não há evidências estatísticas suficientes para rejeitar $H_0$, de modo que o nível médio não pode ser considerado significativamente inferior a 15 mg/dL.
+
+Podemos complementar os resultados utilizando o teste não paramétrico de Wilcoxon signed-rank, para a mediana, sobretudo pelo fato de a concentração lactose estar no limite para a distribuição Normal. As hipóteses tornam-se:
+$$
+\left\{\begin{array}{ll} 
+H_0: \text{mediana} = 6.2\text{ e } H_1:\text{mediana}>6.2\text{ (Lactose) },\\
+H_0: \text{mediana} = 15\text{ e } H_1:\text{mediana}<15\text{ (Fósforo) }.\\
+\end{array}\right.
+$$
+
+```{r}
+(wilcox.test(Lactose, mu = 6.2, alternative = "greater", 
+             conf.int = TRUE, conf.level = 0.95, exact = FALSE))
+(wilcox.test(Fosforo, mu = 15, alternative = "less", 
+             conf.int = TRUE, conf.level = 0.95, exact = FALSE))
+
+```
+| Variável    | Estatística V  | p-valor   | Hipótese alternativa    | Intervalo de confiança (95\%) | Mediana amostral | Decisão ($\alpha = 0.05$)    |
+| ----------- | -------------- | --------- | ------------------------| ----------------------------- | ---------------- | ---------------------------- |
+| **Lactose** | 703.5          | 0.0076    | mediana $> 6.2$         | [6.290; $\infty$)             | 6.435            | **Rejeita** $H_0$            |
+| **Fósforo** | 388.0          | 0.0727    | mediana $< 15$          | ($-\infty$; 15.060)           | 14.520           | **Não Rejeita**  $H_0$       |
+
+- **Conclusão (Lactose):** com nível de significância de 0.05, a mediana da concentração de lactose no leite é significativamente maior do que 6.2 mg/dL, corroborando o resultado obtido pelo teste t-Student.
+
+- **Conclusão (Fósforo):** com nível de significância de 0.05, não há evidência estatística suficiente para afirmar que a mediana é inferior a 15 mg/dL, também confirmando o teste t-Student realizado anteriormente.
+
+Podemos analisar graficamente a distribuição das variáveis bem como os gráficos Q-Q da normalidade. Segue que
+
+```{r}
+
+par(mfrow = c(1, 2))
+# Histograma com curva normal ajustada
+hist(Lactose, probability = TRUE, col = "lightblue",
+main = "Histograma com Curva normal",
+xlab = "Concentração de Lactose (mg/dL)",
+ylab = "Densidade")
+curve(dnorm(x, mean(Lactose), sd(Lactose)), add = TRUE, lwd = 2, col = "red")
+# Q–Q plot
+qqnorm(Lactose, main = "Gráfico Q–Q da Normalidade",
+xlab = "Quantis teóricos da Normal",
+ylab = "Quantis observados de Lactose")
+qqline(Lactose, col = "red", lwd = 2)
+
+par(mfrow = c(1, 2))
+# Histograma com curva normal ajustada
+hist(Fosforo, probability = TRUE, col = "lightblue",
+main = "Histograma com Curva normal",
+xlab = "Concentração de Fósforo (mg/dL)",
+ylab = "Densidade")
+curve(dnorm(x, mean(Fosforo), sd(Fosforo)), add = TRUE, lwd = 2, col = "red")
+# Q–Q plot
+qqnorm(Fosforo, main = "Gráfico Q–Q da Normalidade",
+xlab = "Quantis teóricos da Normal",
+ylab = "Quantis observados de Fósforo")
+qqline(Fosforo, col = "red", lwd = 2)
+
+```
+Os gráficos apresentados permitem avaliar visualmente a adequação das distribuições das concentrações de lactose e fósforo à distribuição Normal.
+
+Observa-se que, para a concentração de fósforo, o gráfico Q-Q indica boa aderência à normalidade, uma vez que os pontos se alinham quase totalmente à reta teórica mostrada em vermelho, com pequenas variações. Essa configuração sugere que a distribuição dos valores de fósforo é aproximadamente simétrica e compatível com o modelo normal, corroborando os resultados obtidos nos testes formais de normalidade.
+
+Por outro lado, no caso da concentração de lactose, verifica-se uma leve assimetria à esquerda no histograma e no gráfico Q-Q, em que pontos situados nas caudas inferiores se afastam da linha de referência. Essa tendência indica uma pequena distorção em relação à normalidade, especialmente na porção inferior da distribuição, o que está em consonãncia com os testes de normalidade realizados, dos quais apenas o Cramér-von Mises apontou desvio significativo.
+
+**d) Construa intervalos de confiança de 95% para o nível médio de lactose e fósforo.** 
+
+**Resposta:** Para cada variável, vamos estimar o valor médio populacional $\mu$ a partir da amostra, assumindo que os dados seguem ditribuição aproximadamente normal. Temos as seguintes hipóteses:
+
+$$
+\left\{\begin{array}{ll} 
+H_0: \mu=\mu_0,\\
+H_0: \mu\neq\mu_0.\\
+\end{array}\right.
+$$
+
+Como o desvio-padrão populacional é desconhecido, vamos calcular manualmente e também aplicar o teste t-Student para uma amostra com nível de significância $\alpha=0.05$. 
+
+```{r}
+library(ggplot2)
+
+n <- length(Lactose)
+
+mean_lactose <- mean(Lactose)
+(dp_lactose <- sd(Lactose))
+erro_lactose <- qt(0.975, df = n-1) * dp_lactose / sqrt(n)
+lim_inf_lactose<- mean_lactose - erro_lactose
+lim_sup_lactose <- mean_lactose + erro_lactose
+c(lim_inf_lactose, lim_sup_lactose)
+t.test(Lactose, conf.level = 0.95) 
+
+# Curva normal ajustada
+x_vals <- seq(min(Lactose), max(Lactose), length.out = 300)
+dens <- dnorm(x_vals, mean = mean_lactose, sd = dp_lactose)
+df_plot <- data.frame(x = x_vals, y = dens)
+df_ic <- subset(df_plot, x >= lim_inf_lactose & x <= lim_sup_lactose)
+
+ggplot(df_plot, aes(x, y)) +
+geom_line(color = "blue", size = 1) +
+geom_area(data = df_ic, aes(x, y), fill = "skyblue", alpha = 0.5) +
+geom_vline(xintercept = mean_lactose, color = "red", linetype = "dashed", size = 1) +
+geom_vline(xintercept = lim_inf_lactose, color = "darkblue", linetype = "dashed", size = 1) +
+geom_vline(xintercept = lim_sup_lactose, color = "darkblue", linetype = "dashed", size = 1) +
+labs(title = "Distribuição Normal Ajustada com IC de 95% da Média",
+x = "Lactose (mg/dL)",
+y = "Densidade") +
+theme_minimal(base_size = 14)
+
+
+mean_fosforo <- mean(Fosforo)
+(dp_fosforo <- sd(Fosforo))
+erro_fosforo <- qt(0.975, df = n-1) * dp_fosforo / sqrt(n)
+lim_inf_fosforo<- mean_fosforo - erro_fosforo
+lim_sup_fosforo <- mean_fosforo + erro_fosforo
+c(lim_inf_fosforo, lim_sup_fosforo)
+t.test(Fosforo,  conf.level = 0.95) 
+
+# Curva normal ajustada
+x_vals <- seq(min(Fosforo), max(Fosforo), length.out = 300)
+dens <- dnorm(x_vals, mean = mean_fosforo, sd = dp_fosforo)
+df_plot <- data.frame(x = x_vals, y = dens)
+df_ic <- subset(df_plot, x >= lim_inf_fosforo & x <= lim_sup_fosforo)
+
+ggplot(df_plot, aes(x, y)) +
+geom_line(color = "blue", size = 1) +
+geom_area(data = df_ic, aes(x, y), fill = "skyblue", alpha = 0.5) +
+geom_vline(xintercept = mean_fosforo, color = "red", linetype = "dashed", size = 1) +
+geom_vline(xintercept = lim_inf_fosforo, color = "darkblue", 
+           linetype = "dashed", size = 1) +
+geom_vline(xintercept = lim_sup_fosforo, color = "darkblue", 
+           linetype = "dashed", size = 1) +
+labs(title = "Distribuição Normal Ajustada com IC de 95% da Média",
+x = "Fósforo (mg/dL)",
+y = "Densidade") +
+theme_minimal(base_size = 14)
+
+
+
+```
+- **Estatísticas do teste:**
+
+| Variável    | Média amostral (($\bar{x}$)) | gl | Intervalo de Confiança (95%) |                                                        
+| ----------- | -------------------------- | ---- | ---------------------------- |
+| **Lactose** | 6.386 mg/dL                | 44   | [6.217 ; 6.556]              |   
+| **Fósforo** | 14.544 mg/dL               | 44   | [13.947 ; 15.142]            |  
+
+- **Conclusão (Lactose):** A média populacional de lactose encontra-se, com 95% de confiança, entre 6.22 e 6.56 mg/dL.
+
+- **Conclusão (Lactose):** A média populacional de fósforo encontra-se, com 95% de confiança, entre 13.95 e 15.14 mg/dL.
+
+**e) Qual seria o tamanho da amostra para verificar as perguntas levantadas no item c, com nível de significância de 0,05 e poder de 80%?** 
+
+**Resposta:** Vamos calcular o tamanho da amostra, a princípio, para avaliar o nível de lactose é maior do que 6,2 mg/dL. Segue que
+
+```{r}
+efeito_lactose <- (mean_lactose-6.2)/dp_lactose
+
+library(pwr)
+pwr.t.test(d = efeito_lactose,
+sig.level = 0.05,
+power = 0.80,
+type = "one.sample",
+alternative = "greater")
+
+pwr.t.test(d = efeito_lactose,
+n = 45,           
+sig.level = 0.05,
+# power = 0.80,
+type = "one.sample",
+alternative = "greater")
+
+
+```
+
+Portanto, para detectar uma diferença do valor de referência de 6,2 mg/dL na concentração de lactose, assumindo que a média
+verdadeira seja cerca de 6.38 mg/dL, como na amostra, e que o desvio-padrão seja ~0.56, precisamos
+de aproximadamente 59 amostras de leite materno para ter 80% de poder no teste t unilateral com nível de significância de 5%. Portanto, como temos apenas 45 amostras, os testes ficam com poder insuficiente e em um segundo experimento precisamos aumentar a quantidade de amostras. Para o conjunto amostral atual, o poder do teste é de aproximadamente 70%.
+
+Fazendo o mesmo para o nível de fósforo menor do que 15 mg/dL, segue que
+
+```{r}
+efeito_fosforo <- (mean_fosforo-15)/dp_fosforo
+
+library(pwr)
+pwr.t.test(d = efeito_fosforo,
+sig.level = 0.05,
+power = 0.80,
+type = "one.sample",
+alternative = "less")
+
+pwr.t.test(d = efeito_fosforo,
+n = 45,           
+sig.level = 0.05,
+# power = 0.80,
+type = "one.sample",
+alternative = "less")
+
+
+
+```
+Para detectar uma diferença do valor de referência de 15 mg/dL na concentração de fósforo, assumindo que a média verdadeira seja cerca de 14.54 mg/dL, como na amostra, e que o desvio-padrão  seja ~1.98, precisamos de aproximadamente 120 amostras de leite materno para ter 80% de poder no teste t unilateral com nível de significância de 5%. Do mesmo modo, nosso conjunto amostral para a concentração de Fósforo resultam em testes que ficam com poder insuficiente. No conjunto atual, o poder do teste está em aproximadamente 45%.
+
+**3) A cefaleia é um dos sintomas mais comuns da medicina, possuindo uma infinidade de causas base: estresse, tabagismo, excesso de ingestão de bebida alcoólica, sono irregular, longos períodos de jejum, problemas oftalmológicos, etc., ou ainda não tendo nenhum causador definido. Uma pesquisa avaliou dois medicamentos para o seu tratamento. Pacientes internados num grande instituto de saúde foram selecionados aleatoriamente para receber um dos medicamentos e verificou-se se houve a melhora da cefaleia. Outras informações tais como sexo e idade também foram levantadas. **
+
+```{r}
+library(readxl)
+
+Atv3 <- read_excel("Dados.xlsx", sheet = "Exercício3")
+
+head(Atv3)
+
+# Alterei os nomes das colunas para facilitar acesso as variáveis
+names(Atv3) <- c("RG", "Idade", "Sexo", "Medicamento", "Melhora_Cefaleia")
+
+str(Atv3)
+
+attach(Atv3)
+
+```
+
+
+**a) Apresente o número e a porcentagem de pacientes por sexo que participaram do estudo para cada medicamento.**
+
+**Resposta:** Vamos calcular o número e a porcentagem de pacientes por sexo construindo uma tabela de contingência
+
+```{r}
+tab_num <- table(Medicamento, Sexo)
+tab_num
+tab_perc <- prop.table(tab_num, margin = 1) * 100
+tab_perc
+```
+Para o medicamento A houveram 140 participantes do sexo feminino e 142 do sexo masculino. Para o medicamento B houveram 139 participanetes do sexo feminino e 150 do sexo masculino.
+
+**b) Calcule as estatísticas descritivas da idade por medicamento e verifique a suposição de normalidade com nível de significância de 0,05.**
+
+**Resposta:** Calculando as estatísticas descritivas, temos:
+
+```{r}
+estatisticas <- aggregate(Idade ~ Medicamento, data = Atv3, 
+                          FUN = function(x) c(
+                            Média = round(mean(x, na.rm = TRUE), 2),
+                            Mediana = median(x, na.rm = TRUE),
+                            DP = round(sd(x, na.rm = TRUE), 2),
+                            Mínimo = min(x, na.rm = TRUE),
+                            Máximo = max(x, na.rm = TRUE)
+                          ))
+
+estatisticas <- data.frame(Medicamento = estatisticas$Medicamento, estatisticas$Idade)
+estatisticas
+
+```
+
+As idades médias dos pacientes que receberam os medicamentos A e B foram bastante semelhantes, em cerca de 48 anos em ambos os grupos. O desvio-padrão foi de aproximadamente 4 anos, indicando dispersão pequena das idades em torno da média. Os valores mínimo e máximo variaram entre 34 e 59 anos, o que mostra que a amostra inclui pacientes de faixa etária adulta sem diferenças expressivas entre os tratamentos.
+
+Vamos verificar a suposição de normalidade da idade por medicamento. Sejam as seguintes hipóteses:
+
+$$
+\left\{\begin{array}{ll} 
+H_0: \text{ A idade dos pacientes segue distribuição Normal},\\
+H_1: \text{ A idade dos pacientes não segue distribuição Normal.}
+\end{array}\right.
+$$
+- **Nível de siginificância:** $\alpha=0.05$
+
+```{r}
+library(nortest)
+tapply(Idade, Medicamento, shapiro.test)
+tapply(Idade, Medicamento, lillie.test)
+tapply(Idade, Medicamento, ad.test)
+tapply(Idade, Medicamento, cvm.test)
+
+```
+- **Estatísticas dos testes:**
+
+| **Teste de Normalidade** | **Medicamento** | **Estatística** | **p-valor** | **Conclusão** ($\alpha = 0,05$)  |
+| ------------------------ | --------------- | --------------- | ----------- | -------------------------------- |
+| **Shapiro–Wilk**         | A               | W = 0.99182     | 0.1207      | Não rejeita $H_0$                |
+| **Shapiro–Wilk**         | B               | W = 0.97291     | 2.789e-05   | Rejeita $H_0$                    |
+| **Lilliefors (KS)**      | A               | D = 0.080805    | 1.326e-04   | Rejeita $H_0$                    |
+| **Lilliefors (KS)**      | B               | D = 0.090265    | 6.073e-06   | Rejeita $H_0$                    |
+| **Anderson–Darling**     | A               | A = 1.0216      | 0.01073     | Rejeita $H_0$                    |
+| **Anderson–Darling**     | B               | A = 2.0702      | 2.821e-05   | Rejeita $H_0$                    |
+| **Cramér–von Mises**     | A               | W = 0.19501     | 6.166e-03   | Rejeita $H_0$                    |
+| **Cramér–von Mises**     | B               | W = 0.3425      | 1.087e-04   | Rejeita $H_0$                    |
+
+- **Conclusão geral:** Os resultados dos testes indicaram que para o medicamento B a distribuição das idades não segue uma distribuição Normal, com nível de significância de 0.05.
+
+Dessa forma, as condições para o uso do teste t-Student não foram atendidas. Por isso, vamos utilizar o teste de Mann-Whitney (Wilcoxon rank-sum), o qua é apropriado para duas amostras independentes. Esse teste baseia-se nas posições dos dados, avaliando se as distribuições das amostras diferem em localização central, como a mediana. As hipóteses a serem testadas são dadas por:
+
+$$
+\left\{\begin{array}{ll} 
+H_0: \text{ As distribuições das idades são iguais entre os grupos de medicamentos},\\
+H_1: \text{ As distribuições das idades diferem entre os grupos de medicamento,}
+\end{array}\right.
+$$
+com nível de significância de 0.05.
+
+
+```{r}
+# Teste de Mann–Whitney (Wilcoxon rank-sum)
+wilcox.test(Idade ~ Medicamento, data = Atv3,
+            alternative = "two.sided", conf.level = 0.95)
+
+```
+| Teste                            | Estatística          | Valor-p | Decisão ($\alpha = 0.05$) |
+| -------------------------------- | -------------------- | ------- | ------------------------- |
+| Mann–Whitney (Wilcoxon rank-sum) | W = 41697            | 0.6297  | **Não rejeita** $H_0$   |
+
+- **Conclusão:** Com nível de significância de 0.05, não há evidências suficientes para rejeitar a hipótese nula, logo, as idades dos pacientes tratados com os medicamentos A e B não diferem de forma estatisticamente siginificativa. Portanto as distribuições das idades são semelhantes entre os dois grupos, o que sugere que a variável idade é comparável entre os tratamentos e não deve introduzir viés na análise dos efeitos dos medicamentos. Podemos obsevar gráficamente esses achados por meio do gráfico boxplot a seguir.
+
+```{r}
+boxplot(Idade~Medicamento, main = "Distribuição das idades por Medicamento")
+```
+Observamos que as distribuições das idades são bastante semelhantes entre os dois grupos. As medianas estão próximas e as amplitudes interquartis apresentam tamanhos equivalentes. Além disos, apenas alguns valores atípicos aparecem em cada grupo, sem indícios de assimetria acentuada. Portanto, podemos considerar que as distribuições de idade são aproximadamente normais em amobos os grupos de medicamentos.
+
+
+```{r}
+mean_A <- estatisticas$Média[1]
+dp_A <- estatisticas$DP[1]
+
+par(mfrow = c(1, 2))
+x <- Idade[Medicamento == "A"]
+hist(x, probability = TRUE, col = "lightblue",
+main = "Histograma da Idade - Med. A ",
+xlab = "Idade (anos)",
+ylab = "Densidade")
+curve(dnorm(x, mean_A, dp_A), add = TRUE, lwd = 2, col = "red")
+# Q–Q plot
+qqnorm(x, main = "Gráfico Q–Q da Normalidade",
+xlab = "Quantis teóricos da Normal",
+ylab = "Quantis observados de Idade - Med. A")
+qqline(x, col = "red", lwd = 2)
+
+
+mean_B <- estatisticas$Média[2]
+dp_B <- estatisticas$DP[2]
+
+par(mfrow = c(1, 2))
+x <- Idade[Medicamento == "B"]
+hist(x, probability = TRUE, col = "lightblue",
+main = "Histograma da Idade - Med. B ",
+xlab = "Idade (anos)",
+ylab = "Densidade")
+curve(dnorm(x, mean_B, dp_B), add = TRUE, lwd = 2, col = "red")
+# Q–Q plot
+qqnorm(x, main = "Gráfico Q–Q da Normalidade",
+xlab = "Quantis teóricos da Normal",
+ylab = "Quantis observados de Idade - Med. B")
+qqline(x, col = "red", lwd = 2)
+
+
+```
+As figuras apresentam, respectivamente, os histogramas com curvas normais ajustadas e os gráficos Q-Q da variável idade para os grupos de medicamento.
+
+No caso do medicamento A, observa-se uma distribuição aproximadamente simétrica  e unimodal, centrada em torno de 48-50 anos. A curva normal ajustada se sobrepõe bem às barras do histograma, e os pontos do gráfico Q-Q seguem de forma consistente a linha de referência, com pequenas flutuações apenas nas extremidades. Esses resultados visuais corroboram o teste de Shapiro-Wilk ($p=0.1207$), que não rejeitou a hipótese de normalidade, indicando que as idades do grupo A seguem, de forma satisfatória, uma distribuição Normal
+
+Por outro lado, para o medicamento B, percebe-se um leve desvio à esquerda no histograma e maior dispersão dos pontos nas caudas do gráfico Q-Q, especialmente nas extremidades inferior e superior. Essa leve assimetria justifica o p-valor significativo no teste de Shapiro-Wilk ($p<0.001$), que rejeitou a hipótese de normalidade para esse grupo. Contudo, esse desvio é visualmente pequeno e não compromete de forma substancial a forma geral da distribuição, que parmanece próxima da normalidade. 
+
+Com base nesses resultados e considerando que o teste ed Mann-Whitney ($p=0.6297$) indicou ausência de diferença significativa entre as idades dos dois grupos, é possível concluir que, apesar de uma pequena violação da normalidade no grupo B, as distribuições são estatisticamente semelhantes e comparáveis. Portanto, a variável idade pode ser considerada homogênea entre os medicamentos, não configurando fator de viés na análise do efeito dos tratamentos.
+
+**c) Há diferença do sexo e idade entre os grupos que receberam os diferentes medicamentos. Faça os testes de hipóteses com nível de significância de 0,05. **
+
+**Resposta:** Como no item anterior, vamos verificar a suposição de normalidade da idade por sexo utilizando o teste Shapiro-Wilk. Das hipóteses
+$$
+\left\{\begin{array}{ll} 
+H_0: \text{ A idade dos pacientes segue distribuição Normal entre sexos},\\
+H_1: \text{ A idade dos pacientes não segue distribuição Normal entre sexos,}
+\end{array}\right.
+$$
+com nível de significância $\alpha=0.05$, temos:
+
+```{r}
+library(nortest)
+tapply(Idade, Sexo, shapiro.test)
+```
+| Sexo      | Estatística W | p-valor  | Conclusão                  |
+| --------- | ------------- | -------- | -------------------------- |
+| Feminino  | 0.9726        | 0.000035 | **Rejeita** $H_0$  |
+| Masculino | 0.99097       | 0.0699   | **Não rejeita** $H_0$ |
+
+- **Conclusão:** com nível de significância de 0.05, a idade não apresenta distribuição normal no grupo Feminino, violando parcialmente a suposição de normalidade.
+
+Utilizando o teste de Mann-Whitney, para verificar se as distribuições de idade por sexo são igual, seguem as hipóteses:
+
+$$
+\left\{\begin{array}{ll} 
+H_0: \text{ As distribuições das idades são iguais entre os sexos},\\
+H_1: \text{ As distribuições das idades diferem entre os sexos,}
+\end{array}\right.
+$$
+com nível de significância $\alpha = 0.05$.
+
+```{r}
+# Teste de Mann–Whitney (Wilcoxon rank-sum)
+wilcox.test(Idade ~ Sexo, data = Atv3,
+            alternative = "two.sided", conf.level = 0.95)
+```
+- **Conclusão:** Com nível de significância de 0.05, não há evidências suficientes para rejeitar a hipótese nula, logo, as idades dos pacientes entre os sexos não diferem de forma estatisticamente siginificativa. Portanto as distribuições das idades são semelhantes entre os sexos. Isso também pode ser verificado com o gráfico boxplot a segur:
+
+```{r}
+boxplot(Idade~Sexo, main = "Distribuição das idades por Sexo")
+```
+O gráfico mostra que as distribuições são equivalentes entre os sexos com ambas as medianas próximas de 50 anos, e podemos verificar a presença de outliers, sobretudo no grupo do sexo feminino, com indivíduos abaixo de 40 anos. Portanto, podemos considerar que as idades por sexo seguem distribuição aproximadamente Normal.
+
+Agora, vamos avaliar se a proporção de homens e mulheres difere entre os medicamentos, utilizando o teste qui-quadrado de independência. As hipóteses a serem testadas são:
+
+$$
+\left\{\begin{array}{ll} 
+H_0: \text{ O sexo é independente do medicamento recebido},\\
+H_1: \text{ O sexo e o medicamento recebido são associados,}
+\end{array}\right.
+$$
+com nível de significância $\alpha=0.05$.
+
+```{r}
+(tab <- table(Sexo, Medicamento))
+chisq.test(tab)
+
+```
+- **Estatísticas do teste:** $\chi^2 = 0.0820$, $gl = 1$ e $p-value = 0.7746$.
+
+- **Conclusão:** com nível de significância de 0.05, não há evidências para rejeitar $H_0$, logo, não existe associação estatisticamente significativa entre o sexo dos pacientes e o medicamento recebido. Portanto, os grupos que receberam os medicamentos A e B são homogêneos em termos de idade e sexo, não havendo evidências de que essas variáveis demográficas tenham influenciado a alocação ou resposta ao tratamento.
+
+**d) A proporção dos pacientes que relataram melhora da cefaleia com o medicamento B é maior do que do medicamento A. Responda com um teste de hipóteses e nível de significância de 0,05.**
+
+**Resposta:** Para testar se a proporção de melhora com o Medicamento B é maior que com o medicamento A, temos que testar as seguinte hipóteses
+
+$$
+\left\{\begin{array}{ll} 
+H_0: p_B = p_A \text{ (As proporções de melhora são iguais entre os medicamentos)},\\
+H_1: p_B > p_A \text{ (Medicamento B tem maior proporção de melhora)},
+\end{array}\right.
+$$
+com nível de significância $\alpha=0.05$.
+
+```{r}
+tab <- table(Medicamento, Melhora_Cefaleia)
+tab
+
+melhora_A <- tab["A", "Sim"]
+melhora_B <- tab["B", "Sim"]
+
+n_A <- sum(tab["A", ])
+n_B <- sum(tab["B", ])
+
+# Teste de duas proporções (unilateral)
+prop.test(x = c(melhora_A, melhora_B),
+          n = c(n_A, n_B),
+          alternative = "less",   # 'less' testa se pA < pB
+          correct = FALSE)
+
+```
+- **Estatística do teste:** $\chi^2=19.001$ com gl = 1 e p-value < 0.0001.
+
+- **Conclusão:** com nível de significância de 0.05, rejeita-se a hipótese nula, portanto, a proporção de pacientes com melhora da cefaleia é sigificativamente maior para o medicamento B.
+
+**e) Calcule o intervalo de confiança de 95% para a diferença da proporção de melhora entre os medicamentos. Interprete o resultado.**
+
+**Resposta:** Para estimar e testar a diferença entre as proporções de pacientes que relataram melhora da cefaleia nos grupos de medicamentos A e B, consideram-se as hipóteses:
+
+
+$$
+\left\{\begin{array}{ll} 
+H_0: p_B = p_A \text{ (As proporções de melhora são iguais entre os medicamentos)},\\
+H_1: p_B \neq p_A \text{ (As proporções de melhora são diferentes entre os medicamentos)},
+\end{array}\right.
+$$
+com nível de significância $\alpha = 0.05$. Neste caso, o teste é bicaudal porque, neste caso, o interesse é avaliar se existe diferença significativa em qualquer direção, sem assumir a priori que o medicamento B é superior. 
+
+```{r}
+prop.test(x = c(melhora_A, melhora_B),
+          n = c(n_A, n_B),
+          alternative = "two.sided",
+          correct = FALSE)
+
+```
+- **Proporções observadas:** $\hat{p_A}=0.5709$ e $\hat{p_B}=0.7439$.
+
+- **Estatística do teste:** $\chi^2 = 19.001$, $gl = 1$ e p-value $< 0.0001$.
+
+- **Intervalo de Confiança de 95%:** $[-0.2496; -0.0964]$.
+
+- **Conclusão:** O intervalo de confiança de 95% para as diferenças das proporções é $[-0.25; -0.09]$ com significância de 0.05. Como o intervalo de confiança não contém o zero e é inteiramente negativo, rejeita-se a hipótese nula. Isso indica que a proporção de melhora é significativamente maior no medicamento B em relação ao medicamento A e a diferença estimada entre as proporções de melhora varia entre 9.6% e 24.9%.
+
+**f) Construa os gráficos para o sexo, idade e resultado do medicamento administrado com o objetivo de ilustrar a comparação entre os dois medicamentos.**
+
+**Resposta:**
+
+```{r}
+library(ggplot2)
+library(scales) 
+
+# ==============================
+# 1) Sexo × Medicamento (proporções)
+# ==============================
+p_sexo <- ggplot(Atv3, aes(x = Medicamento, fill = Sexo)) +
+  geom_bar(position = "fill", color = "black") +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  labs(
+    title = "Distribuição de sexo por medicamento",
+    x = "Medicamento",
+    y = "% dentro do medicamento",
+    fill = "Sexo"
+  ) +
+  theme_minimal(base_size = 13)
+
+p_sexo
+
+
+```
+O gráfico de barras empilhadas apresenta a proporção de pacientes do sexo feminino e masculino em cada grupo de medicamento. Observa-se que as proporções são muito semelhantes entre os medicamentos A e B, o que confirma o resultado do teste qui-quadrado de inpendência realizado anteriormente, concluindo que não há diferença significativa na distribuição de sexo entre os grupos. Portanto, o fator sexo não influencia a comparação entre os tratamentos.
+
+```{r}
+library(ggplot2)
+library(scales) 
+# ==============================
+# 2) Idade × Medicamento (boxplot)
+# ==============================
+p_idade <- ggplot(Atv3, aes(x = Medicamento, y = Idade)) +
+  geom_boxplot(outlier.alpha = 0.25, width = 0.6, color = "black", fill = "grey90") +
+  geom_jitter(width = 0.12, alpha = 0.35, color = "grey30") +
+  stat_summary(fun = median, geom = "point", shape = 18, size = 3, color = "red") +
+  labs(
+    title = "Distribuição das idades por medicamento",
+    x = "Medicamento",
+    y = "Idade (anos)"
+  ) +
+  theme_minimal(base_size = 13)
+
+p_idade
+```
+O boxplot com dispersão dos dados mostra que as idades médias e medianas dos pacientes são próximas nos dois grupos, com faixas interquartis e amplitudes semelhantes. Esse padrão visual reforça o resultado do teste de Mann-Whitney realizado anteriormente, indicando que as idades dos pacientes tratados com A e B não diferem significativamente. Portanto, a idade também é homogênea entre os grupos.
+
+```{r}
+library(ggplot2)
+library(scales) 
+# ==============================
+# 3) Melhora × Medicamento (proporções com IC95%)
+# ==============================
+# Tabela de contingência
+tab <- with(Atv3, table(Medicamento, Melhora_Cefaleia))
+
+# Resumo por medicamento
+res <- data.frame(
+  Medicamento = rownames(tab),
+  n = rowSums(tab),
+  sucesso = tab[, "Sim"]
+)
+
+# Função para IC (prop.test → IC95% bicaudal)
+calc_ci <- function(x, n) {
+  pt <- prop.test(x, n, alternative = "two.sided", correct = FALSE)
+  c(prop = x / n, li = pt$conf.int[1], ls = pt$conf.int[2])
+}
+
+ci_mat <- t(mapply(calc_ci, res$sucesso, res$n))
+res$prop <- ci_mat[, "prop"]
+res$li   <- ci_mat[, "li"]
+res$ls   <- ci_mat[, "ls"]
+
+p_melhora <- ggplot(res, aes(x = Medicamento, y = prop)) +
+  geom_col(width = 0.6, color = "black", fill = "grey80") +
+  geom_errorbar(aes(ymin = li, ymax = ls), width = 0.12) +
+  scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0, 1)) +
+  labs(
+    title = "Proporção de melhora por medicamento (IC 95%)",
+    x = "Medicamento",
+    y = "Proporção de melhora"
+  ) +
+  theme_minimal(base_size = 13)
+
+p_melhora
+```
+O gráfico de barras com intervalos de confiança apresenta as proporções de pacientes que ralataram melhora da cefaleia para cada medicamento. Percebe-se claramente que a proporção de melhora é maior no medicamente B ($\approx74\%$) em comparação ao medicamento A ($\approx57\%$), com intervalos de confiança que não se sobrepõem substanciamente. Esses resultados corroboram o teste de proporções e com o intervalo de confiança da diferença das proporções, que mostrou que o medicamente B proporciona melhora entre 9.6% e 24.9% superior à do medicamento A.
+
+
+**4) Poluente atmosférico é toda e qualquer forma de matéria ou energia com intensidade e em quantidade, concentração, tempo ou características em desacordo com os níveis estabelecidos em legislação. Além disso, tornam ou podem tornar o ar impróprio, nocivo ou ofensivo à saúde, inconveniente ao bem-estar público, danoso aos materiais, à fauna e à flora ou prejudicial à segurança, ao uso e gozo da propriedade e às atividades normais da comunidade. A prefeitura de uma grande cidade realizou um levantamento da qualidade do ar em alguns pontos. Entre as informações, avaliaram-se as quantidades de partículas totais em suspensão, em m3, com o objetivo de comparar este marcador entre estes locais.  **
+
+Verificou-se que os números da coluna "Partículas totais em suspensão" são separados por vírgula, logo, teremos que corrigir o banco de dados. Além disso, vamos modificar o nome das colunas para facilitar acesso as variáveis.
+
+```{r}
+library(readxl)
+
+Atv4 <- read_excel("Dados.xlsx", sheet = "Exercício4")
+
+head(Atv4)
+Atv4[[2]] <- as.numeric(gsub(",", ".", Atv4[[2]]))
+
+names(Atv4) <- c("Local", "Part_Totais")
+
+head(Atv4)
+
+attach(Atv4)
+```
+
+
+**a) Apresente o gráfico de box-plot das variáveis de acordo com o objetivo e calcule as estatísticas descritivas média, mediana e desvio-padrão da quantidade de partículas totais por local.**
+
+**Resposta:** A construção do boxplot e as estatísticas é dada a seguir.
+
+```{r}
+library(ggplot2)
+library(scales) 
+
+boxplot_part_totais <- ggplot(Atv4, aes(x = Local, y = Part_Totais)) +
+  geom_boxplot(outlier.alpha = 0.25, width = 0.6, color = "black", fill = "grey90") +
+  geom_jitter(width = 0.12, alpha = 0.35, color = "grey30") +
+  stat_summary(fun = median, geom = "point", shape = 18, size = 3, color = "red") +
+  labs(
+    title = "Distribuição de Partículas Totais por Local",
+    x = "Local",
+    y = "Partículas Totais em Suspensão (m³)"
+  ) +
+  theme_minimal(base_size = 13)
+
+boxplot_part_totais
+```
+Observa-se na figura que as concentrações médias e medianas diferem entre os pontos de amostragem, indicando variação espacial na qualidade do ar. 
+
+De modo geral, a avenida Brail e Avenida São Paulo apresentam valores de partículas totais mais elevados, com medianas próximas, sugerindo níveis de poluição atmosférica semelhantes e relativaemnte altos nesses locais. Por outro lado, a Avenida Rio Branco apresentou a menor mediana, evidenciando um ar menos carregado de material particulado em comparação com as demais avenidas. 
+
+A dispersão dos dados indica certa variabilidade intra-local, possivelmente associada a diferenças nas condições metereológicas, intensidade do tráfego veicular ou presença de fontes pontuais de emissão. A tabela de estatísticas descritivas a seguir mostram essas diferenças em termos numéricos.
+
+
+```{r}
+estatisticas <- aggregate(Part_Totais ~ Local, data = Atv4, 
+                          FUN = function(x) c(
+                            Média = round(mean(x, na.rm = TRUE), 2),
+                            Mediana = median(x, na.rm = TRUE),
+                            DP = round(sd(x, na.rm = TRUE), 2),
+                            Mínimo = min(x, na.rm = TRUE),
+                            Máximo = max(x, na.rm = TRUE)
+                          ))
+
+estatisticas <- data.frame(Local = estatisticas$Local, estatisticas$Part_Totais)
+estatisticas
+
+```
+
+
+
+**b) Com nível de significância de 0,05, avalie o objetivo da pesquisa.**
+
+**Resposta:** Deseja-se verificar se existe diferença significativa na quantidade média de partículas totais em suspensão entre os locais de monitoramento. As hipóteses são:
+
+$$
+\left\{\begin{array}{ll} 
+H_0: \mu_1 = \mu_2 = \mu_3 \text{ (as médias populacionais são iguais)},\\
+H_1: \text{ Pelo menos uma média difere das demais},
+\end{array}\right.
+$$
+com nível de significância $\alpha=0.05$. Vamos utilizar o teste ANOVA para isso, pois há mais de dois grupos independentes no estudo, que são as três avenidas consideras.
+
+```{r}
+anova_result <- aov(Part_Totais ~ Local, data = Atv4)
+summary(anova_result)
+```
+
+| Fonte de variação | GL      | Sum Sq      |      Mean Sq | F           | p-valor | 
+| :---------------- | :-----: | :---------: | :----------: | :---------: | :-----: | 
+| Local             |    2    |    12 603   |     6 302    |    75.68    | < 0.001 |   
+| Resíduos          |    57   |    4 746    |      83      |      —      |    —    |   
+
+- **Conclusão:** O valor de $F=75.68$ com $p<0.001$ indica que existe diferença estatisticamente significativa entre as médias das partículas totais em suspensão dos diferentes locais analisados. Assim, rejeita-se a hipótese nula de igualdade das médias ao nível de significância de 5%. Em termos práticos, conclui-se que a quantidade média de material particulado no ar varia conforme o local, sugerindo que fatores ambientais e urbanos específicos, como densidade de tráfego, condições de ventilação e presença de fontes, influenciam diretamente a concentração de partículas.
+
+
+**c) Realize as comparações múltiplas entre os locais, se necessário e com nível de significância de 0,05. Construa o gráfico que represente o resultado desta análise.**
+
+**Resposta:** Após a constatação pela tabela ANOVA, de que há diferença significativa entre as médias de partículas totais em suspensão, faremos o teste de comparações múltiplas de Tukey, com nível de significância $\alpha=0.05$, a fim de identificar quais pares de locais diferem entre si. As hipóteses para cada par de locais $i$ e $j$ são
+
+$$
+\left\{\begin{array}{ll} 
+H_0: \mu_i = \mu_j  \text{ (não há diferença entre as médias dos locais)},\\
+H_1: \mu_i \neq \mu_j\text{ (as médias dos locais são diferentes)},
+\end{array}\right.
+$$
+
+```{r}
+tukey_result <- TukeyHSD(anova_result)
+tukey_result
+```
+| Comparação                             | Diferença de Médias | IC 95% Inferior | IC 95% Superior   | p-valor       | Decisão ($\alpha=0.05$)   |
+| :---------------------------------------: | :-------------------: | :---------------: | :---------------:   | :--------------:| :-----------------------: |
+| Avenida Rio Branco - Avenida Brasil    |       -33.61        |      -40.55      |      -26.67      | $< 0.001$     |      Rejeita $H_0$        |
+| Avenida São Paulo - Avenida Brasil     |        -6.91        |      -13.85     |       0.04        |  0.052        |    Não rejeita $H_0$      |
+| Avenida São Paulo - Avenida Rio Branco |        26.71        |      19.76      |      33.65        | $< 0.001$     |      Rejeita $H_0$        |
+
+- **Conclusão:** Há diferença significativa entre a Avenida Rio Branco e as demais avenidas com $p<0.001$. A Avenida Rio Branco apresenta valores médios de partículas em suspensão significativamente menores, evidenciando melhor qualidade do ar nesse local. Entre a Avenida São Paulo e a Avenida Brasil, o valor $p=0.052$ é ligeiramente superior ao limite de 0.05, o que implica ausência de diferença estatisticamente significativa ao nível de 5%, embora haja uma rendência de diferença marginal. Portanto, conclui-se que a Avenida Brasil e Avenida São Paulo apresentam concentrações semelhantes de partículas totais em suspensão, ambas superiores às da Avenida Rio Branco.
+
+O gráfico que representa os resultados desta análise é mostrado a seguir.
+```{r}
+library(multcompView)
+library(dplyr)
+library(ggplot2)
+
+tukey_cld <- TukeyHSD(anova_result)$Local
+tukey_df <- as.data.frame(tukey_cld)
+tukey_df$Comparação <- rownames(tukey_df)
+
+ggplot(tukey_df, aes(x = Comparação, y = diff)) +
+  geom_point(size = 3, color = "blue") +
+  geom_errorbar(aes(ymin = lwr, ymax = upr), width = 0.2, color = "black") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  coord_flip() +
+  labs(
+    title = "Comparações Múltiplas \n Teste de Tukey (95% IC)",
+    x = "Comparação entre locais",
+    y = "Diferença de médias de partículas totais (m³)"
+  ) +
+  theme_minimal(base_size = 13)
+```
+A figura apresenta os resultados das comparações múltiplas de médias pelo teste de Tukey, com nível de confiança de 95%. Cada ponto azul representa a diferença média entre dois locais, e as barras horizontais correspondem ao intervalo de confiança de 95% para essa diferença. A linha tracejada vermelha indica diferença igual a zero, isto é, ausência de diferença significativa. 
+
+As comparações Avenida Rio Branco - Avenida Brasil e Avenidade São Paulo - Avenida Rio Branco possuem intervalos de confiança que não interceptam a linha vertical em zero, indicando diferenças estatisticamente significativas entre as médias desses locais. Isso significa que as concentrações médias de partículas são menores na Avenida Rio Branco em relação às outras duas avenidas. 
+
+Por outro lado, a comparação Avenida São Paulo - Avenida Brasil apresenta o intervalo de confiança tangenciando a linha em zero, sugerindo que não há diferença significativa entre essas duas avenidas ao nível de 5%, embora  exista uma tendência de diferença marginal dado valor de $p=0.0516$.
+
+**d) Verifique as suposições de normalidade e homocedasticidade, com nível de significância de 0,05.**
+
+**Resposta:** Para verificar a normalidade utilizaremos o teste de normalidade de Shapiro-Wilk sobre os resíduos. Sejam as hipóteses:
+
+$$
+\left\{\begin{array}{ll} 
+H_0: \text{ Os resíduos seguem uma distribuição Normal,}\\
+H_1: \text{ Os resíduos não seguem uma distribuição Normal},
+\end{array}\right.
+$$
+com nível de significância $\alpha=0.05$.
+
+```{r}
+shapiro.test(residuals(anova_result))
+
+```
+- **Estatística do teste:** $W  = 0.98071$ e $p-value = 0.4591$.
+
+- **Conclusão:** Com nível de significância de 0.05, não rejeita-se a hipótese nula, indicando que os resíduos seguem distribuição Normal, logo, a suposição de normalidade é atendida.
+
+Para o teste de homocedasticidade (homogeneidade das variâncias) utilizaremos o teste Bartlett, sob as hipóteses:
+
+$$
+\left\{\begin{array}{ll} 
+H_0: \text{ As variâncias populacionais são iguais entre os grupos,}\\
+H_1: \text{ Pelo menos uma variância difere das demais},
+\end{array}\right.
+$$
+com nível de significância $\alpha=0.05$.
+
+```{r}
+bartlett.test(Part_Totais ~ Local, data = Atv4)
+
+```
+- **Estatística do teste:** $0.85767$, $gl = 2$ e $p-value = 0.6513$.
+
+- **Conclusão:** Com nível de significância de 0.05, não rejeita-se $H_0$, indicando homogeneidade das variâncias entre os grupos.
+
+Portanto, os dados atendem às suposições de normalidade e homocedasticidade. As figuras apresentam avaliações gráficas das suposições do modelo de ANOVA, com base na análise dos resíduos.
+
+
+```{r}
+# Resíduos do modelo
+residuos <- residuals(anova_result)
+ajustados <- fitted(anova_result)
+
+# Histograma dos resíduos
+hist(residuos, 
+     main = "Distribuição dos Resíduos", 
+     xlab = "Resíduos", 
+     ylab = "Frequência", 
+     col = "grey90", 
+     border = "black")
+
+# Gráfico QQ-plot para normalidade
+qqnorm(residuos, main = "Gráfico QQ-plot dos Resíduos")
+qqline(residuos, col = "red", lwd = 2)
+
+# Gráfico de homocedasticidade (resíduos vs ajustados)
+plot(ajustados, residuos, 
+     main = "Resíduos vs Valores Ajustados",
+     xlab = "Valores Ajustados", 
+     ylab = "Resíduos", 
+     pch = 19, col = "grey40")
+abline(h = 0, col = "red", lwd = 2, lty = 2)
+
+```
+
+O histograma mostra uma distribuição aproximadamente simétrica e unimodal, centrada em torno de zero. A ausência de assimetria acentuada ou caudas longas indica que os resíduos seguem distribuição aproximadamente Normal, em conformidade com o resultado do teste de Shapiro-Wilk ($p-value = 0.4591$).
+
+O gráfico Q-Q plot, os pontos se alinham de forma próxima à linha vermelha de referência, confirmando que os quantis amostrais se aproximam dos quantis teóricos da distribuição Normal.
+
+Quanto ao gráfico de resíduos versus valores ajustados, os pontos estão dispersos aleatoriamente em torno da linha horizontal em zero, sem formação de padrões sistemáticos. Isso demonstra que a variância dos erros é constante entre os grupos, atendendo à suposição de homocedasticidade.

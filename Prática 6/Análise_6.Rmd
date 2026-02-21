@@ -1,0 +1,186 @@
+---
+title: 'Prática 6: Teste de Hipótese para duas populações'
+author: "Guilherme Rodrigues"
+date: "`r format(Sys.Date(), '%d de %B de %Y')`"
+output:
+  html_document:
+    df_print: paged
+lang: "pt-BR"
+---
+
+<!-- ```{r setup, include=FALSE} -->
+<!-- knitr::opts_chunk$set(echo = TRUE) -->
+<!-- ``` -->
+```{r}
+options(encoding = "UTF-8")
+#limpar a memória
+rm(list = ls())
+```
+
+**1)** Um estudo avaliou o efeito de dois medicamentos num grupo de pacientes com problemas cardíacos. Os pacientes foram aleatoriamente selecionados para receber um dos medicamentos. A idade e os níveis de colesterol (lipoproteínas de alta densidade, HDL) estão disponíveis no arquivo 06_dadosR na planilha Atividade.
+
+```{r}
+library(readxl)
+data <- read_excel("06_dadosR.xlsx", sheet = "Atividade")
+head(data)
+attach(data)
+
+```
+
+
+**a)** Verifique a suposição de normalidade da idade e dos níveis de colesterol destes pacientes.
+
+**Resposta:** Primeiro podemos utilizar métodos gráficos para verificar a suposição de normalidade. Temos:
+
+
+As hipósteses de normalidade das idades dos pacientes é dada por:
+
+$$
+\begin{cases}
+H_0: \text{ Idade dos pacientes segue uma distribuição normal}, \\
+H_1: \text{ Idade dos pacientes não segue uma distribuição normal}.
+\end{cases}
+$$
+```{r}
+library(nortest)
+tapply(Idade, Grupo, shapiro.test)
+tapply(Idade, Grupo, lillie.test)
+tapply(Idade, Grupo, ad.test)
+tapply(Idade, Grupo, cvm.test)
+
+```
+**Conclusão quanto a idade:** com nível de significância $\alpha=0.05$ não rejeitamos $H_0$ em nenhum dos testes realizados, logo, a idade dos pacientes segue uma distribuição normal. 
+
+
+As hipóteses de normalidade para os níveis de colesterol dos pacientes é dada por:
+
+$$
+\begin{cases}
+H_0: \text{ Nível de colesterol dos pacientes segue uma distribuição normal}, \\
+H_1: \text{ Nível de colesterol  não segue uma distribuição normal}.
+\end{cases}
+$$
+
+```{r}
+library(nortest)
+tapply(Colesterol, Grupo, shapiro.test)
+tapply(Colesterol, Grupo, lillie.test)
+tapply(Colesterol, Grupo, ad.test)
+tapply(Colesterol, Grupo, cvm.test)
+
+```
+**Conclusão quanto ao nível de colesterol:** com nível de significância $\alpha=0.05$ não rejeitamos $H_0$ em nenhum dos testes realizados, logo, o nível de colesterol dos pacientes segue uma distribuição normal.
+
+Fazendo as análises gráficas temos: 
+
+```{r}
+# Idade - Grupo M1
+x <- Idade[Grupo == "M1"]
+hist(x, main = "Histograma da Idade - Grupo M1",
+     xlab = "Idade (anos)", prob = TRUE, col = "lightgray")
+lines(density(x), col = "blue", lwd = 2)
+
+qqnorm(x, main = "QQ-plot da Idade - Grupo M1")
+qqline(x, col = "red")
+
+# Idade - Grupo M2
+x <- Idade[Grupo == "M2"]
+hist(x, main = "Histograma da Idade - Grupo M2",
+     xlab = "Idade (anos)", prob = TRUE, col = "lightgray")
+lines(density(x), col = "blue", lwd = 2)
+
+qqnorm(x, main = "QQ-plot da Idade - Grupo M2")
+qqline(x, col = "red")
+
+# Colesterol - Grupo M1
+x <- Colesterol[Grupo == "M1"]
+hist(x, main = "Histograma do Colesterol - Grupo M1",
+     xlab = "Colesterol (mg/dL)", prob = TRUE, col = "lightgray")
+lines(density(x), col = "darkgreen", lwd = 2)
+
+qqnorm(x, main = "QQ-plot do Colesterol - Grupo M1")
+qqline(x, col = "red")
+
+# Colesterol - Grupo M2
+x <- Colesterol[Grupo == "M2"]
+hist(x, main = "Histograma do Colesterol - Grupo M2",
+     xlab = "Colesterol (mg/dL)", prob = TRUE, col = "lightgray")
+lines(density(x), col = "darkgreen", lwd = 2)
+
+qqnorm(x, main = "QQ-plot do Colesterol - Grupo M2")
+qqline(x, col = "red")
+
+```
+
+
+
+Com base nos histogramas, curvas de densidade e QQ-plots, tanto a variável **Idade** quanto a variável **Colesterol** apresentaram comportamento compatível com a suposição de normalidade em ambos os grupos. Portanto, podemos afirmar com base nos testes realizados e nos gráficos que a idade e os níveis de colesterol dos pacientes seguem uma distribuição normal.
+
+**b)** Compare as variâncias da idade e do nível de colesterol dos pacientes que receberam os dois medicamentos, com nível de significância de 0,05.
+
+**Resposta:** Para a variância da idade e dos níveis de colesterol dos pacientes que receberam os dois medicamentos, temos que consideram as hipóteses:
+
+$$
+\begin{cases}
+H_0: \sigma_1 = \sigma_2, \\
+H_1: \sigma_1 \neq \sigma_2.
+\end{cases}
+$$
+
+```{r}
+var.test(Idade~Grupo)
+```
+- Estatística do teste: \(F = 1.9231\)  
+- Graus de liberdade: \(gl_1 = 24\), \(gl_2 = 24\)  
+- Valor-p: \(p = 0.116\)  
+- Intervalo de confiança (95%): \([0.847;\ 4.364]\)  
+- Estimativa da razão de variâncias: \(\hat{\sigma}^2_{M1}/\hat{\sigma}^2_{M2} = 1.923\)  
+- Conclusão: Como \(p > 0.05\), não rejeitamos a hipótese nula. Portanto, **não há evidências estatisticamente significativas de diferença entre as variâncias das idades nos dois grupos**. O intervalo de confiança contém 1, reforçando essa conclusão.  Assim, ao nível de significância de 5%, a suposição de homogeneidade de variâncias para a variável *Idade* pode ser considerada válida.
+
+Para a variância dos níveis de colesterol dos pacientes que receberam os dois medicamentos, temos:
+
+```{r}
+var.test(Colesterol~Grupo)
+```
+- Estatístico do teste: \(F = 0.991\)  
+- Graus de liberdade: \(gl_1 = 24\), \(gl_2 = 24\)  
+- Valor-p: \(p = 0.982\)  
+- Intervalo de confiança (95%): \([0.437;\ 2.249]\)  
+- Estimativa da razão de variâncias: \(\hat{\sigma}^2_{M1}/\hat{\sigma}^2_{M2} = 0.991\) 
+- Conclusão: Como \(p > 0.05\), não rejeitamos a hipótese nula. Portanto, **não há evidências estatisticamente significativas de diferença entre as variâncias do colesterol nos dois grupos**.  
+O intervalo de confiança contém o valor 1, reforçando a conclusão de homogeneidade das variâncias. Assim, ao nível de significância de 5%, a suposição de homogeneidade de variâncias para a variável *Colesterol* também pode ser considerada válida.
+
+
+**c)** Há diferença das médias da idade e do nível de colesterol dos pacientes entre os dois grupos? Utilize o nível de significância de 0,05. Construa os intervalos de confiança de 95% para a diferença de médias entre os grupos das duas variáveis.
+
+**Resposta:** Para verificar se existem diferenças na médias da idade e nos níveis de colesterol temos o seguinte teste de hipóteses
+
+$$
+\begin{cases}
+H_0: \mu_1 = \mu_2, \\
+H_1: \mu_1 \neq \mu_2.
+\end{cases}
+$$
+Utilizando o teste t-student para as idades e considerando que as variâncias são iguais, temos:
+
+```{r}
+t.test(Idade~Grupo, var.equal=TRUE) #Vimos que as variancias são equivalentes, logo colocamos TRUE
+```
+- Estatística do teste: \(t \approx 1,44\)  
+- Graus de liberdade: \(df = 48\)  
+- Valor-p: \(p \approx 0,156\)  
+- Intervalo de confiança (95%): \([-3,04;\ 18,48]\) anos  
+- Diferença estimada das médias: \(\hat{\mu}_{M1} - \hat{\mu}_{M2} \approx 7,72\) anos  
+- Conclusão: Como \(p > 0,05\), não rejeitamos \(H_0\). Assim, **não há evidências estatísticas de diferença significativa nas médias da idade** entre os dois grupos de tratamento.
+
+Do mesmo modo, para os níves de colesterol, temos
+
+```{r}
+t.test(Colesterol~Grupo, var.equal=TRUE) #Vimos que as variancias são equivalentes, logo colocamos TRUE
+```
+- Estatístico do teste: \(t \approx 2,51\)  
+- Graus de liberdade: \(df = 48\)  
+- Valor-p: \(p \approx 0,016\)  
+- Intervalo de confiança (95%): \([2,25;\ 20,33]\) mg/dL  
+- Diferença estimada das médias: \(\hat{\mu}_{M1} - \hat{\mu}_{M2} \approx 11,29\) mg/dL  
+- Conclusão: Como \(p < 0,05\), rejeitamos \(H_0\). Portanto, **há evidências de diferença significativa nos níveis médios de colesterol entre os dois grupos**, sendo que os pacientes do Grupo M1 apresentaram, em média, valores mais elevados de colesterol (HDL).

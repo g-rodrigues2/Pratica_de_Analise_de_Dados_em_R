@@ -1,0 +1,256 @@
+---
+title: 'Prática 2: Avaliação da qualidade da água de rios e lagoas urbanizados'
+author: "Guilherme Rodrigues"
+date: "`r format(Sys.Date(), '%d de %B de %Y')`"
+output:
+  html_document:
+    df_print: paged
+lang: "pt-BR"
+---
+
+<!-- ```{r setup, include=FALSE} -->
+<!-- knitr::opts_chunk$set(echo = TRUE) -->
+<!-- ``` -->
+
+Uma pesquisa avaliou a qualidade da água de rios e lagoas urbanizados de um grande município. Amostras foram retiradas de vários pontos de cada local e organizadas num banco de dados no Excel. As informações coletadas foram:
+
+a) Identificação da amostra;
+b) Nome do local;
+c) Presença de coliformes;
+d) Presença de criadouro durante a visita;
+e) Valor de nitrato, em mg/L.
+f) Valor de PH.
+
+```{r}
+library(readxl)
+dados <- read_excel("dados.xlsx")
+head(dados)
+```
+
+Responda as perguntas abaixo:
+
+**a)** Classifique cada uma das variáveis do estudo.
+
+**Resposta:** As variáveis do estudo são:
+```{r}
+names(dados)
+```
+Logo, as classificações são dadas por:
+
+- Identificação da amostra: Qualitativa nominal (Variável identificadora)
+
+- Nome do local: Qualitativa nominal
+
+- Presença de coliformes: Qualitativa nominal de característica dictômica presente/ausente
+
+- Valor de Nitrato: Quantitativa contínua
+
+- Valor de PH: Quantitativa contínua
+
+**b)** Verifique a existência de pontos discrepantes de nitrato e PH por meio de gráficos e estatísticas descritivas. Realize a correção das informações implausíveis, visto que houve o esquecimento do ponto como erro de digitação.
+
+**Resposta:** A priori vamos verificar a existência de pontos discrepantes dos valores de Nitrato e PH utilizando boxplots e estatísticas descritivas.
+```{r}
+summary(dados$Nitrato)
+
+summary(dados$PH)
+```
+Aqui já podemos verificar que existem informações implausíveis, dado que para os valores de nitrato registrados um está faltando, e nos valores de PH registrados, temos 8 faltantes.  Uma forma de resolver isso é substituir os valores faltantes pela mediana do grupo local, assim evitamos a distorção dos dados. Além disso, temos uma quantidade baixa de dados faltantes em cada variável:
+
+```{r}
+sum(is.na(dados$PH)) / nrow(dados) * 100
+sum(is.na(dados$Nitrato)) / nrow(dados) * 100
+print(paste("Percentual de dados faltantes em PH:", 
+            round(sum(is.na(dados$PH)) / nrow(dados) * 100, 2), "%"))
+print(paste("Percentual de dados faltantes em Nitrato:", 
+            round(sum(is.na(dados$Nitrato)) / nrow(dados) * 100, 2), "%"))
+```
+Portanto, fazendo o preenchimento dos dados faltantes com a mediana do grupo local, temos:
+
+```{r}
+dados$PH[is.na(dados$PH)] <- ave(dados$PH, dados$Local,
+                      FUN = function(x) median(x, na.rm = TRUE))[is.na(dados$PH)]
+
+dados$Nitrato[is.na(dados$Nitrato)] <- ave(dados$Nitrato, dados$Local,
+                      FUN = function(x) median(x, na.rm = TRUE))[is.na(dados$Nitrato)]
+
+```
+
+Agora podemos verificar que não há mais dados faltantes em PH:
+
+```{r}
+sum(is.na(dados$PH)) 
+sum(is.na(dados$Nitrato))  
+```
+E as estatísticas descritivas atualizadas para pH e Nitrato são, respectivamente:
+```{r}
+summary(dados$PH)
+summary(dados$Nitrato)
+```
+Agora vamos verificar a existência de pontos discrepantes utilizando o boxplot:
+
+```{r}
+library(ggplot2)
+library(patchwork)
+library(scales) 
+# Boxplot de Nitrato
+boxplot_nitrato <- ggplot(dados, aes(x = "", y = Nitrato)) +
+  geom_boxplot(fill = "grey90", color = "black", 
+               size = 1.1, outlier.colour = "red", outlier.size = 2.5) +
+  labs(title = "(A) Boxplot de Nitrato", x = NULL, y = "Nitrato (mg/L)") +
+  theme_classic(base_size = 14) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    axis.text = element_text(color = "black")
+  )
+
+# Boxplot de PH
+boxplot_ph <- ggplot(dados, aes(x = "", y = PH)) +
+  geom_boxplot(fill = "grey90", color = "black", 
+               size = 1.1, outlier.colour = "red", outlier.size = 2.5) +
+  labs(title = "(B) Boxplot de pH", x = NULL, y = "pH") +
+  theme_classic(base_size = 14) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    axis.text = element_text(color = "black")
+  )
+
+boxplot_nitrato + boxplot_ph
+```
+
+Os boxplots permitem visualizar a distribuição dos dados de pH e Nitrato. Observa-se que o pH apresentou valores entre 3,9 e 11,1, com mediana de 8,1, estando a maior parte das observações (50%) entre 6,0 e 9,9. Esse resultado indica uma predominância de valores próximos à neutralidade, mas com variação considerável, o que sugere diferenças entre locais ou momentos de coleta. Já o Nitrato variou entre 5,4 e 20,2 mg/L, com mediana de 9,5 e média de 10,0. Apesar de a maior parte das amostras se concentrar entre 8,5 e 11,2, há presença de outliers acima de 15 mg/L, indicando pontos de maior concentração possivelmente relacionados a fontes específicas de contaminação. Em conjunto, os resultados evidenciam que, enquanto o pH se mantém dentro de uma faixa relativamente ampla, o nitrato apresenta dispersão menor, mas com valores extremos que podem demandar atenção do ponto de vista ambiental.
+
+
+**c)** As distribuições de amostras com coliformes entre os locais são diferentes? Avalie por meio de tabelas e gráficos.
+
+**Resposta:** Para avaliar se as distribuições de amostras com coliformes entre os locais são diferentes, podemos utilizar tabelas de contingência e gráficos de barras.
+
+```{r}
+# Tabela de contingência
+tabela_coliformes <- table(dados$Local, dados$Presenca_Coliforme)
+tabela_coliformes
+
+prop_tabela_coliformes <- prop.table(tabela_coliformes, 1) * 100
+
+
+distr_tabela_coliformes <- ggplot(dados, aes(x = Local, fill = Presenca_Coliforme)) +
+  geom_bar(position = "dodge") +
+  labs(title = "(A) Distribuição por local",
+       x = "Local", y = "Número de amostras", fill = "Presença de coliformes") +
+  theme_minimal(base_size = 11) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    axis.text.x  = element_text(angle = 45, hjust = 1)
+  )
+
+distr_tabela_coli_prop <- ggplot(dados, aes(x = Local, fill = Presenca_Coliforme)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = percent_format()) +
+  labs(title = "(B) Distribuição proporcional por local",
+       x = "Local", y = "Proporção de amostras", fill = "Presença de coliformes") +
+  theme_minimal(base_size = 11) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    axis.text.x  = element_text(angle = 45, hjust = 1)
+  )
+
+(distr_tabela_coliformes + distr_tabela_coli_prop) +
+  plot_layout(guides = "collect") & theme(legend.position = "bottom", 
+                              plot.margin = margin(5, 20, 5, 20))
+
+```
+
+Os resultados apresentados evidenciam que a presença de coliformes variou entre os locais amostrados, tanto em termos absolutos quanto proporcionais. Observa-se que a Lagoa Branca apresentou a maior quantidade de amostras com coliformes, ao passo que no Bosque dos Jequitibás a frequência foi mais equilibrada entre presença e ausência. Já em Porto Alegre e Rio Bonito, embora o número total de amostras seja semelhante, a proporção de coliformes presentes foi maior, indicando uma tendência de maior contaminação relativa. A análise proporcional é importante, pois revela diferenças que não são totalmente perceptíveis apenas pela contagem absoluta. Assim, os resultados sugerem que a distribuição de coliformes não é homogênea entre os locais, refletindo possíveis variações nas condições ambientais ou nas fontes de contaminação.
+
+**d)** Construa o histograma e o box-plot do nitrato por local. Calcule as estatísticas descritivas com média, desvio-padrão, quartis do nitrato por local.
+
+**Resposta:** 
+
+```{r}
+tapply(dados$Nitrato, dados$Local, summary)
+
+ggplot(dados, aes(x = Nitrato, fill = Local)) +
+  geom_histogram(binwidth = 1, color = "black", alpha = 0.9) +
+  facet_wrap(~ Local, ncol = 3, scales = "free_y") +
+  scale_fill_brewer(palette = "Pastel1") +
+  labs(title = "(A) Histogramas do Nitrato por local",
+       x = "Nitrato (mg/L)", y = "Frequência", fill = "Local") +
+  theme_classic(base_size = 13) +
+  theme(
+    plot.title   = element_text(hjust = 0.5, face = "bold"),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    strip.text   = element_text(face = "bold"),
+    legend.position = "none"  
+  )
+
+ggplot(dados, aes(x = Local, y = Nitrato, fill = Local)) +
+  geom_boxplot(color = "black", size = 1, outlier.colour = "red", outlier.size = 2) +
+  scale_fill_brewer(palette = "Pastel1") +
+  labs(title = "(B) Boxplots do Nitrato por local",
+       x = "Local", y = "Nitrato (mg/L)", fill = "Local") +
+  theme_classic(base_size = 13) +
+  theme(
+    plot.title   = element_text(hjust = 0.5, face = "bold"),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    strip.text   = element_text(face = "bold"),
+    legend.position = "none",  
+    axis.text.x  = element_text(angle = 30, hjust = 1) 
+  )
+```
+
+Os resultados evidenciam diferenças relevantes na distribuição dos valores de nitrato entre os locais amostrados. O Bosque dos Jequitibás apresentou as maiores concentrações, com média de 12,47 mg/L e elevada dispersão (mínimo de 5,4 e máximo de 20,2 mg/L), indicando maior heterogeneidade nas condições ambientais desse ponto. A Lagoa Branca mostrou valores mais estáveis, concentrados em torno de 11,5 mg/L, com baixa variabilidade, sugerindo condições mais homogêneas. Já Lagoa Santa e Porto Alegre apresentaram distribuições semelhantes, com medianas próximas a 9,0 mg/L e menor amplitude, refletindo níveis moderados de nitrato e menor ocorrência de valores extremos. Por fim, Rio Bonito exibiu as menores concentrações, com média de 7,91 mg/L e distribuição mais estreita, indicando um ambiente menos impactado por fontes de nitrato. Em conjunto, os histogramas e boxplots reforçam que a concentração de nitrato não é homogênea entre os locais, refletindo variações nas características ambientais ou no grau de influência antrópica de cada região.
+
+**e)** Construa o histograma e o box-plot do PH por local. Calcule as estatísticas descritivas com média, desvio-padrão, quartis do PH por local.
+
+**Resposta:** 
+
+```{r}
+tapply(dados$PH, dados$Local, summary)
+
+ggplot(dados, aes(x = PH, fill = Local)) +
+  geom_histogram(binwidth = 1, color = "black", alpha = 0.9) +
+  facet_wrap(~ Local, ncol = 3, scales = "free_y") +
+  scale_fill_brewer(palette = "Pastel1") +
+  labs(title = "(A) Histogramas do pH por local",
+       x = "pH", y = "Frequência", fill = "Local") +
+  theme_classic(base_size = 13) +
+  theme(
+    plot.title   = element_text(hjust = 0.5, face = "bold"),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    strip.text   = element_text(face = "bold"),
+    legend.position = "none"  
+  )
+
+ggplot(dados, aes(x = Local, y = PH, fill = Local)) +
+  geom_boxplot(color = "black", size = 1, outlier.colour = "red", outlier.size = 2) +
+  scale_fill_brewer(palette = "Pastel1") +
+  labs(title = "(B) Boxplots do PH por local",
+       x = "Local", y = "PH", fill = "Local") +
+  theme_classic(base_size = 13) +
+  theme(
+    plot.title   = element_text(hjust = 0.5, face = "bold"),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    strip.text   = element_text(face = "bold"),
+    legend.position = "none",  
+    axis.text.x  = element_text(angle = 30, hjust = 1)
+  )
+
+```
+
+A análise do pH evidenciou variações entre os locais amostrados, ainda que em menor magnitude em comparação ao nitrato. No Bosque dos Jequitibás, observou-se pH médio de 8,14, com valores variando de 3,9 a 11,0, indicando amplitude relativamente ampla e sugerindo heterogeneidade nas condições da água. A Lagoa Branca apresentou distribuição semelhante, com média de 7,87 e mediana de 8,1, caracterizando valores próximos da neutralidade, porém também com registros mínimos de 3,9, o que pode refletir episódios pontuais de acidificação. Na Lagoa Santa, os valores médios foram mais baixos (7,47), com mediana de 7,85 e amplitude de 3,9 a 11,1, sugerindo maior variabilidade e condições ambientais flutuantes. Em Porto Alegre, a mediana de 8,5 e média de 8,04 apontam para condições levemente alcalinas e mais estáveis, enquanto em Rio Bonito a média foi de 7,75 e a mediana de 8,55, também próxima da neutralidade, mas com menor dispersão. Os histogramas e boxplots reforçam que, embora todos os locais apresentem pH dentro da faixa esperada, há diferenças de amplitude e dispersão que refletem a influência de fatores locais e possivelmente de impactos antrópicos distintos.
+
+**f)** A distribuição de nitrato e PH difere entre os locais avaliados? Discuta a partir das análises dos itens (d) e (e).
+
+**Resposta:** Com base nos resultados apresentados nos itens (d) e (e), verifica-se que tanto a distribuição do nitrato quanto do pH diferem entre os locais avaliados, embora em magnitudes distintas. Para o nitrato, a análise dos histogramas, boxplots e estatísticas descritivas evidenciou contrastes marcantes: o Bosque dos Jequitibás apresentou as maiores concentrações e a maior variabilidade (5,4 a 20,2 mg/L), enquanto o Rio Bonito registrou os menores valores médios (7,9 mg/L), indicando condições ambientais menos impactadas. Locais como Lagoa Branca, Lagoa Santa e Porto Alegre situaram-se em uma faixa intermediária, porém com amplitudes menores, sugerindo maior homogeneidade nessas áreas. Já em relação ao pH, embora todos os locais tenham se mantido dentro da faixa esperada para águas superficiais, observou-se variação relevante entre eles: o Bosque dos Jequitibás e a Lagoa Branca mostraram valores médios mais alcalinos ( $\approx$ 8,1), enquanto a Lagoa Santa apresentou pH médio mais baixo (7,5), refletindo maior oscilação nas condições locais. Assim, os resultados indicam que o nitrato apresenta diferenças mais expressivas entre os locais, possivelmente associadas a diferentes fontes de contaminação ou aporte de nutrientes, enquanto o pH, embora também variável, sugere condições ambientais mais equilibradas, mas ainda sujeitas a oscilações que podem estar relacionadas a processos naturais e a influências antrópicas.
+
+
